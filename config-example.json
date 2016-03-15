@@ -1,0 +1,8 @@
+{
+    "host": "pulse.mozilla.org",
+    "login": "my_pulse_username",
+    "password": "pulse_pass",
+    "ssl": true,
+    "port": 5671,
+    "queue_name": "queue/$username/test-notify"
+}

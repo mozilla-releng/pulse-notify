@@ -9,9 +9,14 @@ setup(
     author='Rail Aliiev',
     author_email='rail@mozilla.com',
     description='',
-    requires=[
+    install_requires=[
         'aioamqp',
         'aiohttp',
         'blessings',
     ],
+    entry_points="""
+        [console_scripts]
+        pulse-notify = pulsenotify.main:cli
+      """,
+
 )

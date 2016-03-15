@@ -4,5 +4,5 @@
     "password": "pulse_pass",
     "ssl": true,
     "port": 5671,
-    "queue_name": "queue/$username/test-notify"
+    "queue_name": "test-notify"
 }

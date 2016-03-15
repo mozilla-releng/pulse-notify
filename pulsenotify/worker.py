@@ -18,7 +18,7 @@ async def worker(config, consumer):
     channel = await protocol.channel()
     await channel.basic_qos(prefetch_count=1, prefetch_size=0,
                             connection_global=False)
-    queue_name = config["queue_name"]
+    queue_name = 'queue/%s/%s' % (config["login"], config["queue_name"])
     log.info("Using queue: %s", queue_name)
     await channel.queue_declare(queue_name=queue_name, durable=True)
     for e in consumer.get_exchanges():

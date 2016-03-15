@@ -8,7 +8,8 @@ from pulsenotify.worker import worker
 
 log = logging.getLogger(__name__)
 
-if __name__ == '__main__':
+
+def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", required=True,
                         type=argparse.FileType("r"))
@@ -22,3 +23,6 @@ if __name__ == '__main__':
     config = json.load(args.config)
     event_loop.run_until_complete(worker(config, ReleaseConsumer()))
     event_loop.run_forever()
+
+if __name__ == '__main__':
+    cli()

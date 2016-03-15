@@ -1,9 +1,7 @@
 import json
 import logging
-import asyncio
 
 from blessings import Terminal
-
 from pulsenotify.util import task_term_info
 
 log = logging.getLogger(__name__)
@@ -84,7 +82,7 @@ class ReleaseConsumer(BaseConsumer):
 
     def get_exchanges(self):
         exchanges = super().get_exchanges()
-        ignore_suffixes =[
+        ignore_suffixes = [
             "task-defined",
             "task-pending",
             "task-running",

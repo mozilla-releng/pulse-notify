@@ -1,5 +1,8 @@
 import json
 import logging
+import smtplib
+
+from email.mime.multipart import MIMEMultipart
 
 from blessings import Terminal
 from pulsenotify.util import task_term_info
@@ -74,6 +77,16 @@ class BaseConsumer(object):
 
     async def handle_unknown(self, channel, body, envelope, properties):
         pass
+
+    async def notify(self, sender_email, recipients):
+        """Perform the notification (ie email some people)"""
+        email_message = MIMEMultipart()
+        email_message['Subject'] = "Blank start subject"
+        email_message['To'] = ', '.join(recipients)
+
+        s = smtplib.SMTP('localhost')
+        s.sendmail(sender_email, recipients, email_message.as_string())
+        s.quit()
 
 
 class ReleaseConsumer(BaseConsumer):

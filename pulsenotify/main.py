@@ -1,7 +1,7 @@
 import argparse
 import json
 import logging
-from pulsenotify.consumer import ReleaseConsumer
+from pulsenotify.consumer import BaseConsumer, ReleaseConsumer
 from pulsenotify import event_loop
 from pulsenotify.worker import worker
 
@@ -21,7 +21,9 @@ def cli():
     logging.basicConfig(level=args.loglevel, format="%(message)s")
 
     config = json.load(args.config)
-    event_loop.run_until_complete(worker(config, ReleaseConsumer()))
+    event_loop.run_until_complete(worker(config,
+                                         BaseConsumer({k: config[k] for k in config if 'notify' in k})
+                                         ))
     event_loop.run_forever()
 
 if __name__ == '__main__':

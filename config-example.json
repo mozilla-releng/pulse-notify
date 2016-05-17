@@ -1,8 +1,12 @@
 {
     "host": "pulse.mozilla.org",
-    "login": "my_pulse_username",
-    "password": "pulse_pass",
+    "login": "csheetest",
+    "password": "mytestpass1!",
     "ssl": true,
     "port": 5671,
-    "queue_name": "test-notify"
+    "queue_name": "test-notify",
+    "notify_email": "hidden@somedomain.com",
+    "notify_pass": "my_secret_secure_password",
+    "notify_host": "smtp.gmail.com",
+    "notify_port": "587"
 }

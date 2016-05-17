@@ -2,10 +2,13 @@ import json
 import logging
 import smtplib
 
+from smtplib import SMTPConnectError
+
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from blessings import Terminal
-from pulsenotify.util import task_term_info
+from pulsenotify.util import task_term_info, fetch_task
 
 log = logging.getLogger(__name__)
 
@@ -22,13 +25,23 @@ EXCHANGES = [
 
 class BaseConsumer(object):
     routing_key = '#'
+    t = Terminal()
+
+    def __init__(self, nc):
+        self.email = nc['notify_email']
+        self.passwd = nc['notify_pass']
+        self.host = nc['notify_host']
+        self.port = nc['notify_port']
+        self.test_sent = 0
 
     def get_exchanges(self):
-        return EXCHANGES
+        #return EXCHANGES
+        return ["exchange/taskcluster-queue/v1/task-completed"]  # For testing only
 
     async def dispatch(self, channel, body, envelope, properties):
         exchange = envelope.exchange_name
-        log.debug("Decoding body: %r", body)
+        #log.debug("Decoding body: %r", body)
+
         body = json.loads(body.decode("utf-8"))
         try:
 
@@ -67,7 +80,10 @@ class BaseConsumer(object):
         pass
 
     async def handle_task_completed(self, channel, body, envelope, properties):
-        pass
+        info = await task_term_info(body)
+        print(self.t.green("[COMPLETE]"), info)
+        await self.notify(['csheehan@mozilla.com'], info)
+        return
 
     async def handle_task_failed(self, channel, body, envelope, properties):
         pass
@@ -78,15 +94,31 @@ class BaseConsumer(object):
     async def handle_unknown(self, channel, body, envelope, properties):
         pass
 
-    async def notify(self, sender_email, recipients):
-        """Perform the notification (ie email some people)"""
+    async def notify(self, recipients, subject):
+        """Perform the notification (ie email relevant addresses)"""
+        # TODO: fill in the steps with the necessary information
+        if self.test_sent > 5:
+            return
+
         email_message = MIMEMultipart()
-        email_message['Subject'] = "Blank start subject"
+        email_message['Subject'] = subject
         email_message['To'] = ', '.join(recipients)
 
-        s = smtplib.SMTP('localhost')
-        s.sendmail(sender_email, recipients, email_message.as_string())
-        s.quit()
+        email_body = MIMEText('placeholder_body')
+        email_message.attach(email_body)
+
+        try:
+            s = smtplib.SMTP(self.host, self.port)
+            s.ehlo()
+            s.starttls()
+            s.login(self.email, self.passwd)
+            s.sendmail(self.email, recipients, email_message.as_string())
+            s.quit()
+            print(self.t.green("[NOTIFIED]"), "CHECK UR EMAIL, bottom of notify reached without breaking")
+            self.test_sent += 1
+        except SMTPConnectError as ce:
+            print('[!] SMTPConnectError: ' + ce.message)
+
 
 
 class ReleaseConsumer(BaseConsumer):

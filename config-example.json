@@ -5,8 +5,10 @@
     "ssl": true,
     "port": 5671,
     "queue_name": "test-notify",
-    "notify_email": "hidden@somedomain.com",
-    "notify_pass": "my_secret_secure_password",
-    "notify_host": "smtp.gmail.com",
-    "notify_port": "587"
+    "notify":{
+        "email": "",
+        "passwd": "",
+        "host": "smtp.gmail.com",
+        "port": "587"
+    }
 }

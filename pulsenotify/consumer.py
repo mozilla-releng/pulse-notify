@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from blessings import Terminal
-from pulsenotify.util import task_term_info, fetch_task
+from pulsenotify.util import task_term_info
 
 log = logging.getLogger(__name__)
 
@@ -28,10 +28,10 @@ class BaseConsumer(object):
     t = Terminal()
 
     def __init__(self, nc):
-        self.email = nc['notify_email']
-        self.passwd = nc['notify_pass']
-        self.host = nc['notify_host']
-        self.port = nc['notify_port']
+        self.email = nc['email']
+        self.passwd = nc['passwd']
+        self.host = nc['host']
+        self.port = nc['port']
         self.test_sent = 0
 
     def get_exchanges(self):
@@ -94,18 +94,15 @@ class BaseConsumer(object):
     async def handle_unknown(self, channel, body, envelope, properties):
         pass
 
-    async def notify(self, recipients, subject):
+    async def notify(self, recipients, subject, email_body):
         """Perform the notification (ie email relevant addresses)"""
-        # TODO: fill in the steps with the necessary information
-        if self.test_sent > 5:
+        if self.test_sent > 5:  # Just here so i don't spam my email
             return
 
         email_message = MIMEMultipart()
         email_message['Subject'] = subject
         email_message['To'] = ', '.join(recipients)
-
-        email_body = MIMEText('placeholder_body')
-        email_message.attach(email_body)
+        email_message.attach(MIMEText(email_body))
 
         try:
             s = smtplib.SMTP(self.host, self.port)

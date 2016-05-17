@@ -22,8 +22,9 @@ def cli():
 
     config = json.load(args.config)
     event_loop.run_until_complete(worker(config,
-                                         BaseConsumer({k: config[k] for k in config if 'notify' in k})
-                                         ))
+                                         BaseConsumer(config['notify'])
+                                         )
+                                  )
     event_loop.run_forever()
 
 if __name__ == '__main__':

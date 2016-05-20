@@ -1,5 +1,4 @@
-import aiohttp #TODO: see if httptools makes anything faster
-#import httptools
+import aiohttp
 import logging
 from blessings import Terminal
 

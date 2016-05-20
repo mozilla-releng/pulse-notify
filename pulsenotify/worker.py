@@ -20,7 +20,7 @@ async def worker(config, consumer):
                             connection_global=False)
     queue_name = 'queue/%s/%s' % (config["login"], config["queue_name"],)
     log.info("Using queue: %s", queue_name)
-    await channel.queue_declare(queue_name=queue_name, durable=False)
+    await channel.queue_declare(queue_name=queue_name, durable=False, exclusive=True)
     for e in consumer.get_exchanges():
         log.info("binding %s using %s", e, consumer.routing_key)
         await channel.queue_bind(exchange_name=e, queue_name=queue_name,

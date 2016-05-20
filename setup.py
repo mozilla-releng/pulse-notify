@@ -13,6 +13,8 @@ setup(
         'aioamqp',
         'aiohttp',
         'blessings',
+        'boto3',
+        'uvloop',
     ],
     entry_points="""
         [console_scripts]

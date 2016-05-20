@@ -1,14 +1,10 @@
 import json
 import logging
-import smtplib
 
-from smtplib import SMTPConnectError
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import boto3
 
 from blessings import Terminal
-from pulsenotify.util import task_term_info
+from pulsenotify.util import task_term_info, fetch_task
 
 log = logging.getLogger(__name__)
 
@@ -23,131 +19,56 @@ EXCHANGES = [
 ]
 
 
-class BaseConsumer(object):
-    routing_key = '#'
+class NotifyConsumer(object):
+    routing_key = 'route.connor'
     t = Terminal()
 
-    def __init__(self, nc):
-        self.email = nc['email']
-        self.passwd = nc['passwd']
-        self.host = nc['host']
-        self.port = nc['port']
+    def __init__(self, notify_config):
+        self.access_key_id = notify_config['aws_access_key_id']
+        self.secret_access_key = notify_config['aws_secret_access_key']
         self.test_sent = 0
 
     def get_exchanges(self):
         #return EXCHANGES
-        return ["exchange/taskcluster-queue/v1/task-completed"]  # For testing only
+        return ["exchange/taskcluster-queue/v1/task-defined"]  # For testing only
 
     async def dispatch(self, channel, body, envelope, properties):
-        exchange = envelope.exchange_name
-        #log.debug("Decoding body: %r", body)
+        exchange = envelope.exchange_name.split('/')[-1]
+        print(exchange + '\n')
+        log.debug("Decoding body: %r", body)
 
         body = json.loads(body.decode("utf-8"))
         try:
-
-            if exchange.endswith("task-defined"):
-                await self.handle_task_defined(channel, body, envelope, properties)
-            elif exchange.endswith("task-pending"):
-                await self.handle_task_pending(channel, body, envelope, properties)
-            elif exchange.endswith("task-running"):
-                await self.handle_task_running(channel, body, envelope, properties)
-            elif exchange.endswith("task-completed"):
-                await self.handle_task_completed(channel, body, envelope, properties)
-            elif exchange.endswith("task-failed"):
-                await self.handle_task_failed(channel, body, envelope, properties)
-            elif exchange.endswith("task-exception"):
-                await self.handle_task_exception(channel, body, envelope, properties)
-            elif exchange.endswith("artifact-created"):
-                await self.handle_artifact_created(channel, body, envelope, properties)
-            else:
-                await self.handle_unknown(body)
+            await self.handle(channel, body, envelope, properties, exchange)
         except:
             log.exception("Failed to handle")
         finally:
             return await channel.basic_client_ack(
                  delivery_tag=envelope.delivery_tag)
 
-    async def handle_task_defined(self, channel, body, envelope, properties):
-        pass
 
-    async def handle_task_pending(self, channel, body, envelope, properties):
-        pass
+    async def handle(self, channel, body, envelope, properties, exchange):
+        task = await fetch_task(body["status"]["taskId"])
+        print(task)
+        try:
+            extra = task['extra']
+            print(extra)
+            notify_info = extra['notification']
+            print(notify_info)
 
-    async def handle_task_running(self, channel, body, envelope, properties):
-        pass
+            arn = notify_info[exchange]['arn']
+            message = notify_info[exchange]['message']
+        except KeyError:
+            log.debug('[!] No notification/exchange section in task %s' % body['status']['taskId'])
 
-    async def handle_artifact_created(self, channel, body, envelope, properties):
-        pass
-
-    async def handle_task_completed(self, channel, body, envelope, properties):
-        info = await task_term_info(body)
-        print(self.t.green("[COMPLETE]"), info)
-        await self.notify(['csheehan@mozilla.com'], info)
+        await self.notify(arn, message)
         return
 
-    async def handle_task_failed(self, channel, body, envelope, properties):
-        pass
 
-    async def handle_task_exception(self, channel, body, envelope, properties):
-        pass
-
-    async def handle_unknown(self, channel, body, envelope, properties):
-        pass
-
-    async def notify(self, recipients, subject, email_body):
+    async def notify(self, arn, message):
         """Perform the notification (ie email relevant addresses)"""
-        if self.test_sent > 5:  # Just here so i don't spam my email
-            return
+        client = boto3.client('sns', aws_access_key_id=self.access_key_id,
+                              aws_secret_access_key=self.secret_access_key)
 
-        email_message = MIMEMultipart()
-        email_message['Subject'] = subject
-        email_message['To'] = ', '.join(recipients)
-        email_message.attach(MIMEText(email_body))
-
-        try:
-            s = smtplib.SMTP(self.host, self.port)
-            s.ehlo()
-            s.starttls()
-            s.login(self.email, self.passwd)
-            s.sendmail(self.email, recipients, email_message.as_string())
-            s.quit()
-            print(self.t.green("[NOTIFIED]"), "CHECK UR EMAIL, bottom of notify reached without breaking")
-            self.test_sent += 1
-        except SMTPConnectError as ce:
-            print('[!] SMTPConnectError: ' + ce.message)
-
-
-
-class ReleaseConsumer(BaseConsumer):
-    routing_key = 'route.index.releases.v1.#'
-    t = Terminal()
-
-    def get_exchanges(self):
-        exchanges = super().get_exchanges()
-        ignore_suffixes = [
-            "task-defined",
-            "task-pending",
-            "task-running",
-            "artifact-created"
-        ]
-        return [e for e in exchanges
-                if not any([e.endswith(s) for s in ignore_suffixes])]
-
-    async def handle_task_completed(self, channel, body, envelope, properties):
-        info = await task_term_info(body)
-        print(self.t.green("[COMPLETE]"), info)
-
-    async def handle_task_failed(self, channel, body, envelope, properties):
-        info = await task_term_info(body)
-        print(self.t.red("[FAILED]"), info)
-
-    async def handle_task_exception(self, channel, body, envelope, properties):
-        info = await task_term_info(body)
-        print(self.t.yellow("[EXCEPTION]"), info)
-
-    async def handle_unknown(self, channel, body, envelope, properties):
-        info = await task_term_info(body)
-        print(self.t.magenta("[SKIP]"), envelope.exchange_name,  info)
-
-    handle_task_defined = handle_task_pending = handle_task_running = \
-        handle_artifact_created = handle_unknown
+        resp = client.publish(TopicArn=arn, Message=message)
+        print('[!] Notified!')

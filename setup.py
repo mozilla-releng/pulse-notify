@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
     name='pulse-notify',
-    version='0.1',
+    version='0.2',
     packages=['pulsenotify'],
     url='',
     license='',
-    author='Rail Aliiev',
+    author='Rail Aliiev, Connor Sheehan',
     author_email='rail@mozilla.com',
     description='',
     install_requires=[

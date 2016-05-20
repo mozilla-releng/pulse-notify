@@ -1,7 +1,6 @@
 import json
 import logging
-
-import boto3
+from importlib import import_module
 
 from blessings import Terminal
 from pulsenotify.util import task_term_info, fetch_task
@@ -23,9 +22,9 @@ class NotifyConsumer(object):
     routing_key = 'route.connor'
     t = Terminal()
 
-    def __init__(self, notify_config):
-        self.access_key_id = notify_config['aws_access_key_id']
-        self.secret_access_key = notify_config['aws_secret_access_key']
+    def __init__(self, services_config):
+        self.service_objects = [import_module('pulsenotify.plugins.' + service['name']).Plugin(service['config'])
+                                for service in services_config]
         self.test_sent = 0
 
     def get_exchanges(self):
@@ -34,7 +33,6 @@ class NotifyConsumer(object):
 
     async def dispatch(self, channel, body, envelope, properties):
         exchange = envelope.exchange_name.split('/')[-1]
-        print(exchange + '\n')
         log.debug("Decoding body: %r", body)
 
         body = json.loads(body.decode("utf-8"))
@@ -49,26 +47,16 @@ class NotifyConsumer(object):
 
     async def handle(self, channel, body, envelope, properties, exchange):
         task = await fetch_task(body["status"]["taskId"])
-        print(task)
         try:
             extra = task['extra']
-            print(extra)
-            notify_info = extra['notification']
-            print(notify_info)
-
-            arn = notify_info[exchange]['arn']
-            message = notify_info[exchange]['message']
+            notification_section = extra['notification']
+            exchange_section = notification_section[exchange]
         except KeyError:
             log.debug('[!] No notification/exchange section in task %s' % body['status']['taskId'])
 
-        await self.notify(arn, message)
+        for service in self.service_objects:
+            try:
+                await service.notify(exchange_section[service.name])
+            except Exception:
+                log.exception("Service %s failed!", service.name)
         return
-
-
-    async def notify(self, arn, message):
-        """Perform the notification (ie email relevant addresses)"""
-        client = boto3.client('sns', aws_access_key_id=self.access_key_id,
-                              aws_secret_access_key=self.secret_access_key)
-
-        resp = client.publish(TopicArn=arn, Message=message)
-        print('[!] Notified!')

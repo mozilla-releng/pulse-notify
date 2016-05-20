@@ -1,14 +1,26 @@
 {
     "host": "pulse.mozilla.org",
-    "login": "csheetest",
-    "password": "mytestpass1!",
+    "login": "pulse_username",
+    "password": "pulse_password",
     "ssl": true,
     "port": 5671,
-    "queue_name": "test-notify",
-    "notify":{
-        "email": "",
-        "passwd": "",
-        "host": "smtp.gmail.com",
-        "port": "587"
-    }
+    "queue_name": "queue_name",
+    "services": [
+      {
+        "name": "sns",
+        "config": {
+          "aws_access_key_id": "AWSACCESSKEY",
+          "aws_secret_access_key": "SUPERSECRETANDLONGKEY"
+        }
+      },
+      {
+        "name": "smtp",
+        "config": {
+          "email": "sender_email@domain.com",
+          "passwd": "senders_password",
+          "host": "smtp.host.com",
+          "port": "587"
+        }
+      }
+    ]
 }

@@ -25,13 +25,17 @@ class Plugin(object):
         email_message['To'] = ', '.join(task_config['recipients'])
         email_message.attach(MIMEText(task_config['body']))
 
-        try:
-            s = smtplib.SMTP(self.host, self.port)
-            s.ehlo()
-            s.starttls()
-            s.login(self.email, self.passwd)
-            s.sendmail(self.email, task_config['recipients'], email_message.as_string())
-            s.quit()
-            print("[!] Notified on smtp!")
-        except SMTPConnectError as ce:
-            log.exception('[!] SMTPConnectError: %s', ce.message)
+        for i in range(5):
+            try:
+                s = smtplib.SMTP(self.host, self.port)
+                s.ehlo()
+                s.starttls()
+                s.login(self.email, self.passwd)
+                s.sendmail(self.email, task_config['recipients'], email_message.as_string())
+                s.quit()
+                print("[!] Notified on smtp!")
+                return
+            except SMTPConnectError as ce:
+                log.exception('[!] Attempt %s: SMTPConnectError %s', str(i), ce.message)
+        else:
+            log.exception('[!] Could not connect to %s with login %s: %s', self.host, self.email)

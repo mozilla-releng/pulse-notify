@@ -3,7 +3,7 @@ import logging
 from importlib import import_module
 
 from blessings import Terminal
-from pulsenotify.util import task_term_info, fetch_task
+from pulsenotify.util import fetch_task
 
 log = logging.getLogger(__name__)
 
@@ -29,11 +29,11 @@ class NotifyConsumer(object):
 
     def get_exchanges(self):
         #return EXCHANGES
-        return ["exchange/taskcluster-queue/v1/task-defined"]  # For testing only
+        return ["exchange/taskcluster-queue/v1/task-defined"]  # TODO: Change, for testing only
 
     async def dispatch(self, channel, body, envelope, properties):
+        log.debug('Dispatch called.')
         exchange = envelope.exchange_name.split('/')[-1]
-        log.debug("Decoding body: %r", body)
 
         body = json.loads(body.decode("utf-8"))
         try:
@@ -55,8 +55,9 @@ class NotifyConsumer(object):
             log.debug('[!] No notification/exchange section in task %s' % body['status']['taskId'])
 
         for service in self.service_objects:
-            try:
-                await service.notify(exchange_section[service.name])
-            except Exception:
-                log.exception("Service %s failed!", service.name)
+            if service.name in exchange_section:
+                try:
+                    await service.notify(exchange_section[service.name])
+                except Exception:
+                    log.exception("Service %s failed!", service.name)
         return

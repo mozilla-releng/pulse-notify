@@ -33,13 +33,13 @@ class NotifyConsumer(object):
 
     async def dispatch(self, channel, body, envelope, properties):
         log.debug('Dispatch called.')
-        exchange = envelope.exchange_name.split('/')[-1]
+        taskcluster_exchange = envelope.exchange_name.split('/')[-1]
 
         body = json.loads(body.decode("utf-8"))
         try:
-            await self.handle(channel, body, envelope, properties, exchange)
+            await self.handle(channel, body, envelope, properties, taskcluster_exchange)
         except:
-            log.exception("Failed to handle")
+            log.exception("[!] Failed to handle message from exchange %s", taskcluster_exchange)
         finally:
             return await channel.basic_client_ack(
                  delivery_tag=envelope.delivery_tag)
@@ -53,11 +53,11 @@ class NotifyConsumer(object):
             exchange_section = notification_section[exchange]
         except KeyError:
             log.debug('[!] No notification/exchange section in task %s' % body['status']['taskId'])
+            return
 
-        for service in self.service_objects:
-            if service.name in exchange_section:
-                try:
-                    await service.notify(exchange_section[service.name])
-                except Exception:
-                    log.exception("Service %s failed!", service.name)
+        for service in (obj for obj in self.service_objects if obj.name in exchange_section):
+            try:
+                await service.notify(exchange_section[service.name])
+            except Exception:
+                log.exception("Service %s failed!", service.name)
         return

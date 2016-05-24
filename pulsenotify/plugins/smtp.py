@@ -50,7 +50,7 @@ class Plugin(object):
             rendered_email = self.template.render(task_config, date=datetime.datetime.now().strftime('%b %d, %Y'))
             email_message.attach(MIMEText(rendered_email, 'html'))
 
-        for i in range(5):
+        for attempt in range(5):
             try:
                 s = smtplib.SMTP(self.host, self.port)
                 s.ehlo()
@@ -61,6 +61,6 @@ class Plugin(object):
                 log.info("[!] Notified on smtp!")
                 return
             except SMTPConnectError as ce:
-                log.exception('[!] Attempt %s: SMTPConnectError %s', str(i), ce.message)
+                log.exception('[!] Attempt %s: SMTPConnectError %s', str(attempt), ce.message)
         else:
             log.exception('[!] Could not connect to %s with login %s: %s', self.host, self.email)

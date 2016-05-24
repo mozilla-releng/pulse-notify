@@ -20,6 +20,14 @@
           "passwd": "senders_password",
           "host": "smtp.host.com",
           "port": "587"
+          "template": true
+        }
+      },
+      {
+        "name": "ses",
+        "config": {
+          "aws_access_key_id": "AWSACCESSKEY",
+          "aws_secret_access_key": "SUPERSECRETANDLONGKEY"
         }
       }
     ]

@@ -22,4 +22,4 @@ async def worker(config, consumer):
                                  routing_key=consumer.routing_key)
     await channel.basic_consume(consumer.dispatch, queue_name=queue_name)
 
-    log.info('Worker has completed running: %s.')
+    log.info('Worker has completed running.')

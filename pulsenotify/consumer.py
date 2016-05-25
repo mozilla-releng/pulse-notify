@@ -24,13 +24,14 @@ class NotifyConsumer(object):
         self.service_objects = [import_module('pulsenotify.plugins.' + service['name']).Plugin(service['config'])
                                 for service in services_config]
         self.test_sent = 0
+        log.info('Consumer initialized.')
 
     def get_exchanges(self):
         #return EXCHANGES
         return ["exchange/taskcluster-queue/v1/task-defined"]  # TODO: Change, for testing only
 
     async def dispatch(self, channel, body, envelope, properties):
-        log.debug('Dispatch called.')
+        log.info('Dispatch called.')
         taskcluster_exchange = envelope.exchange_name.split('/')[-1]
 
         body = json.loads(body.decode("utf-8"))
@@ -39,8 +40,8 @@ class NotifyConsumer(object):
         except:
             log.exception("Failed to handle message from exchange %s", taskcluster_exchange)
         finally:
-            return await channel.basic_client_ack(
-                 delivery_tag=envelope.delivery_tag)
+            log.info('Acknowledging consumption of task %s', body['status']['taskId'])
+            return await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
 
     async def handle(self, channel, body, envelope, properties, exchange):
         task = await fetch_task(body["status"]["taskId"])
@@ -49,12 +50,13 @@ class NotifyConsumer(object):
             notification_section = extra['notification']
             exchange_section = notification_section[exchange]
         except KeyError:
-            log.debug('No notification/exchange section in task %s' % body['status']['taskId'])
+            log.info('No notification/exchange section in task %s' % body['status']['taskId'])
             return
 
+        # TODO: Consider making this async for? remove await ? idk
         for service in (obj for obj in self.service_objects if obj.name in exchange_section):
             try:
                 await service.notify(exchange_section[service.name])
             except Exception:
-                log.exception("Service %s failed!", service.name)
+                log.exception("Service %s failed to notify for task %s.", service.name, body['status']['taskId'])
         return

@@ -6,8 +6,8 @@ setup(
     packages=['pulsenotify'],
     url='',
     license='',
-    author='Rail Aliiev, Connor Sheehan',
-    author_email='rail@mozilla.com',
+    author='Connor Sheehan',
+    author_email='csheehan@mozilla.com',
     description='',
     install_requires=[
         'aioamqp',
@@ -15,6 +15,7 @@ setup(
         'blessings',
         'boto3',
         'uvloop',
+        'jinja2',
     ],
     entry_points="""
         [console_scripts]

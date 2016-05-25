@@ -19,7 +19,7 @@
           "email": "sender_email@domain.com",
           "passwd": "senders_password",
           "host": "smtp.host.com",
-          "port": "587"
+          "port": "587",
           "template": true
         }
       },

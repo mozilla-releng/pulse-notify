@@ -34,9 +34,9 @@ class Plugin(object):
                                       aws_secret_access_key=self.secret_access_key)
 
                 client.publish(TopicArn=task_config['arn'], Message=task_config['message'])
-                log.info('[!] Notified with SNS!')
+                log.info('Notified with SNS!')
                 return
             except Boto3Error as b3e:
-                log.exception('[!] Attempt %s: Boto3Error %s', str(attempt), b3e.message)
+                log.exception('Attempt %s: Boto3Error %s', str(attempt), b3e.message)
         else:
-            log.exception('[!] Could not notify %s via SNS', task_config['arn'])
+            log.exception('Could not notify %s via SNS', task_config['arn'])

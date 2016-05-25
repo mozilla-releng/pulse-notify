@@ -2,7 +2,6 @@ import json
 import logging
 from importlib import import_module
 
-from blessings import Terminal
 from pulsenotify.util import fetch_task
 
 log = logging.getLogger(__name__)
@@ -20,7 +19,6 @@ EXCHANGES = [
 
 class NotifyConsumer(object):
     routing_key = 'route.connor'
-    t = Terminal()
 
     def __init__(self, services_config):
         self.service_objects = [import_module('pulsenotify.plugins.' + service['name']).Plugin(service['config'])
@@ -39,11 +37,10 @@ class NotifyConsumer(object):
         try:
             await self.handle(channel, body, envelope, properties, taskcluster_exchange)
         except:
-            log.exception("[!] Failed to handle message from exchange %s", taskcluster_exchange)
+            log.exception("Failed to handle message from exchange %s", taskcluster_exchange)
         finally:
             return await channel.basic_client_ack(
                  delivery_tag=envelope.delivery_tag)
-
 
     async def handle(self, channel, body, envelope, properties, exchange):
         task = await fetch_task(body["status"]["taskId"])
@@ -52,7 +49,7 @@ class NotifyConsumer(object):
             notification_section = extra['notification']
             exchange_section = notification_section[exchange]
         except KeyError:
-            log.debug('[!] No notification/exchange section in task %s' % body['status']['taskId'])
+            log.debug('No notification/exchange section in task %s' % body['status']['taskId'])
             return
 
         for service in (obj for obj in self.service_objects if obj.name in exchange_section):

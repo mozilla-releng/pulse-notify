@@ -20,13 +20,14 @@ EXCHANGES = [
 class NotifyConsumer(object):
     routing_key = 'route.connor'
 
-    def __init__(self, services_config):
-        self.service_objects = [import_module('pulsenotify.plugins.' + service['name']).Plugin(service['config'])
-                                for service in services_config]
+    def __init__(self, services_list):
+        self.service_objects = [import_module('pulsenotify.plugins.' + service).Plugin()
+                                for service in services_list]
         self.test_sent = 0
         log.info('Consumer initialized.')
 
-    def get_exchanges(self):
+    @property
+    def exchanges(self):
         #return EXCHANGES
         return ["exchange/taskcluster-queue/v1/task-defined"]  # TODO: Change, for testing only
 

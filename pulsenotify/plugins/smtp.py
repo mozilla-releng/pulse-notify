@@ -1,6 +1,7 @@
 import smtplib
 import logging
 import datetime
+import os
 
 from pulsenotify.plugins.base_plugin import BasePlugin
 from smtplib import SMTPConnectError
@@ -18,24 +19,24 @@ class Plugin(BasePlugin):
     """
     SMTP Plugin for the Pulse Notification system.
 
-    On startup, the config file must include an object with the following elements in the schema:
-        - email (to send notifications from)
-        - passwd (of email)
-        - host (SMTP host domain)
-        - port (port of host)
-        - template (True/False indicator to use template)
+    The following environment variables must be present for the plugin to function:
+        - SMTP_EMAIL (to send notifications from)
+        - SMTP_PASSWD (of email)
+        - SMTP_HOST (SMTP host domain)
+        - SMTP_PORT (port of host)
+        - SMTP_TEMPLATE (True/False indicator to use template)
 
     In each task, under extra/<desired exchange>, there must be an object with the following schema:
         - subject (of email)
         - recipients (who to notify)
         - body (of email in text format)
     """
-    def __init__(self, config):
-        self.email = config['email']
-        self.passwd = config['passwd']
-        self.host = config['host']
-        self.port = config['port']
-        self.template = env.get_template('email_template.html') if config['template'] == True else None
+    def __init__(self):
+        self.email = os.environ['SMTP_EMAIL']
+        self.passwd = os.environ['SMTP_PASSWD']
+        self.host = os.environ['SMTP_HOST']
+        self.port = os.environ['SMTP_PORT']
+        self.template = env.get_template('email_template.html') if os.environ['SMTP_TEMPLATE'] == True else None
         log.info('%s plugin initialized', self.name)
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):

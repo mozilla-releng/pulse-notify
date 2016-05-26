@@ -1,6 +1,7 @@
 import boto3
 from boto3.exceptions import Boto3Error
 import logging
+import os
 from pulsenotify.plugins.base_plugin import BasePlugin
 
 log = logging.getLogger(__name__)
@@ -8,9 +9,9 @@ log = logging.getLogger(__name__)
 
 class Plugin(BasePlugin):
 
-    def __init__(self, config):
-        self.access_key_id = config['aws_access_key_id']
-        self.secret_access_key = config['aws_secret_access_key']
+    def __init__(self):
+        self.access_key_id = os.environ['AWS_ACCESS_KEY_ID']
+        self.secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
         log.info('%s plugin initialized', self.name)
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):

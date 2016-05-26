@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import os
 import sys  # TODO: remove when in prod (only use is to send log to stdout)
 from blessings import Terminal
 from pulsenotify.consumer import NotifyConsumer
@@ -37,8 +38,6 @@ class ColoredFormatter(logging.Formatter):
 
 def cli():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", required=True,
-                        type=argparse.FileType("r"))
     parser.add_argument("-v", "--verbose", dest="loglevel",
                         action="store_const", const=logging.DEBUG,
                         default=logging.INFO)
@@ -54,16 +53,16 @@ def cli():
     root_logger.setLevel(logging.NOTSET)
     root_logger.addHandler(clihandler)
 
-    config = json.load(args.config)
-    #config = {}
-
 
     try:
-        event_loop.run_until_complete(worker(config, NotifyConsumer(config['services'])))
+        event_loop.run_until_complete(worker(NotifyConsumer(os.environ['PN_SERVICES'].split(':'))))
         event_loop.run_forever()
     except KeyboardInterrupt as ke:
+        # TODO: make better shutdown
         log.exception('KeyboardInterrupt registered: exiting.')
         event_loop.stop()
+        while event_loop.is_running():
+            pass
         event_loop.close()
         exit()
 

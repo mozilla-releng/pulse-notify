@@ -10,7 +10,7 @@ class BasePlugin(object):
         return self.__module__.split('.')[-1]
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        log.error('Notify not implemented for %s', __name__)
+        log.error('Notify not implemented for %s', self.name)
         return None
 
     def get_notify_section(self, task, taskcluster_exchange):

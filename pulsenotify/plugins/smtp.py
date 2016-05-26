@@ -1,6 +1,8 @@
 import smtplib
 import logging
 import datetime
+
+from pulsenotify.plugins.base_plugin import BasePlugin
 from smtplib import SMTPConnectError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,7 +14,7 @@ log = logging.getLogger(__name__)
 env = Environment(loader=PackageLoader('pulsenotify', 'templates'))
 
 
-class Plugin(object):
+class Plugin(BasePlugin):
     """
     SMTP Plugin for the Pulse Notification system.
 
@@ -34,22 +36,21 @@ class Plugin(object):
         self.host = config['host']
         self.port = config['port']
         self.template = env.get_template('email_template.html') if config['template'] == True else None
+        log.info('%s plugin initialized', self.name)
 
+    async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
+        task_config = self.get_notify_section(task, taskcluster_exchange)
+        task_id = body["status"]["taskId"]
 
-    @property
-    def name(self):
-        return 'smtp'
-
-    async def notify(self, task_config):
         email_message = MIMEMultipart()
-        email_message['Subject'] = task_config['subject']
+        email_message['Subject'] = 'Task %s: %s' % (task_id, task_config['subject'],)
         email_message['To'] = ', '.join(task_config['recipients'])
-        email_message.attach(MIMEText(task_config['body'], 'text'))
 
         if self.template:
             rendered_email = self.template.render(task_config, date=datetime.datetime.now().strftime('%b %d, %Y'))
             email_message.attach(MIMEText(rendered_email, 'html'))
-
+        else:
+            email_message.attach(MIMEText(task_config['body'], 'text'))
 
         for attempt in range(5):
             try:
@@ -64,4 +65,4 @@ class Plugin(object):
             except SMTPConnectError as ce:
                 log.exception('Attempt %s: SMTPConnectError %s', str(attempt), ce.message)
         else:
-            log.exception('Could not connect to %s with login %s: %s', self.host, self.email)
+            log.exception('Could not connect to %s with login %s:%s for task %s', self.host, self.email, task_id)

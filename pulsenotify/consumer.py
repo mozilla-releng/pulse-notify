@@ -33,30 +33,19 @@ class NotifyConsumer(object):
     async def dispatch(self, channel, body, envelope, properties):
         log.info('Dispatch called.')
         taskcluster_exchange = envelope.exchange_name.split('/')[-1]
-
         body = json.loads(body.decode("utf-8"))
+        task_id = body["status"]["taskId"]
+        task = await fetch_task(task_id)
+        enabled_plugins = task['extra']['notification'][taskcluster_exchange]
+
         try:
-            await self.handle(channel, body, envelope, properties, taskcluster_exchange)
+            for service in filter(lambda obj: obj.name in enabled_plugins, self.service_objects):
+                try:
+                    await service.notify(channel, body, envelope, properties, task, taskcluster_exchange)
+                except Exception:
+                    log.exception("Service %s failed to notify for task %s.", service.name, task_id)
         except:
             log.exception("Failed to handle message from exchange %s", taskcluster_exchange)
         finally:
-            log.info('Acknowledging consumption of task %s', body['status']['taskId'])
+            log.info('Acknowledging consumption of task %s', task_id)
             return await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
-
-    async def handle(self, channel, body, envelope, properties, exchange):
-        task = await fetch_task(body["status"]["taskId"])
-        try:
-            extra = task['extra']
-            notification_section = extra['notification']
-            exchange_section = notification_section[exchange]
-        except KeyError:
-            log.info('No notification/exchange section in task %s' % body['status']['taskId'])
-            return
-
-        # TODO: Consider making this async for? remove await ? idk
-        for service in (obj for obj in self.service_objects if obj.name in exchange_section):
-            try:
-                await service.notify(exchange_section[service.name])
-            except Exception:
-                log.exception("Service %s failed to notify for task %s.", service.name, body['status']['taskId'])
-        return

@@ -6,6 +6,7 @@ log = logging.getLogger(__name__)
 
 
 async def fetch_task(task_id):
+    log.info('Fetching task %s from Taskcluster', task_id)
     url = "https://queue.taskcluster.net/v1/task/{}".format(task_id)
     with aiohttp.Timeout(10), aiohttp.ClientSession() as session:
         response = await session.get(url)

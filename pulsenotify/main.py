@@ -55,9 +55,18 @@ def cli():
     root_logger.addHandler(clihandler)
 
     config = json.load(args.config)
+    #config = {}
 
-    event_loop.run_until_complete(worker(config, NotifyConsumer(config['services'])))
-    event_loop.run_forever()
+
+    try:
+        event_loop.run_until_complete(worker(config, NotifyConsumer(config['services'])))
+        event_loop.run_forever()
+    except KeyboardInterrupt as ke:
+        log.exception('KeyboardInterrupt registered: exiting.')
+        event_loop.stop()
+        event_loop.close()
+        exit()
+
 
 if __name__ == '__main__':
     cli()

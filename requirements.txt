@@ -1,0 +1,6 @@
+uvloop
+jinja2
+boto3
+aiohttp
+aioamqp
+blessings

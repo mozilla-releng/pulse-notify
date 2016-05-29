@@ -2,21 +2,15 @@ import boto3
 from boto3.exceptions import Boto3Error
 import logging
 import os
-from pulsenotify.plugins.base_plugin import BasePlugin
+from . import AWSPlugin
 
 log = logging.getLogger(__name__)
 
 
-class Plugin(BasePlugin):
-
-    def __init__(self):
-        self.access_key_id = os.environ['AWS_ACCESS_KEY_ID']
-        self.secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
-        log.info('%s plugin initialized', self.name)
+class Plugin(AWSPlugin):
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        task_config = self.get_notify_section(task, taskcluster_exchange)
-        task_id = body["status"]["taskId"]
+        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         for attempt in range(5):
             try:

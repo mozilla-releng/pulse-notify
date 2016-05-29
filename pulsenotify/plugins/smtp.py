@@ -3,7 +3,7 @@ import logging
 import datetime
 import os
 
-from pulsenotify.plugins.base_plugin import BasePlugin
+from . import BasePlugin
 from smtplib import SMTPConnectError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -36,12 +36,11 @@ class Plugin(BasePlugin):
         self.passwd = os.environ['SMTP_PASSWD']
         self.host = os.environ['SMTP_HOST']
         self.port = os.environ['SMTP_PORT']
-        self.template = env.get_template('email_template.html') if os.environ['SMTP_TEMPLATE'] == True else None
+        self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
         log.info('%s plugin initialized', self.name)
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        task_config = self.get_notify_section(task, taskcluster_exchange)
-        task_id = body["status"]["taskId"]
+        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         email_message = MIMEMultipart()
         email_message['Subject'] = 'Task %s: %s' % (task_id, task_config['subject'],)
@@ -61,7 +60,7 @@ class Plugin(BasePlugin):
                 s.login(self.email, self.passwd)
                 s.sendmail(self.email, task_config['recipients'], email_message.as_string())
                 s.quit()
-                log.info("Notified on smtp!")
+                log.info("Notified on smtp for task %s" % task_id)
                 return
             except SMTPConnectError as ce:
                 log.exception('Attempt %s: SMTPConnectError %s', str(attempt), ce.message)

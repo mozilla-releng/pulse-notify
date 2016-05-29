@@ -1,4 +1,4 @@
-from pulsenotify.plugins.base_plugin import BasePlugin
+from . import AWSPlugin
 import boto3
 from boto3.exceptions import Boto3Error
 import logging
@@ -7,7 +7,7 @@ import os
 log = logging.getLogger(__name__)
 
 
-class Plugin(BasePlugin):
+class Plugin(AWSPlugin):
     """
     Amazon SNS Plugin for the Pulse Notification system
 
@@ -19,15 +19,10 @@ class Plugin(BasePlugin):
         - arn (Amazon resource number of SNS topic to deliver notification to)
         - message (body of the notification message)
     """
-    def __init__(self):
-        self.access_key_id = os.environ['AWS_ACCESS_KEY_ID']
-        self.secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
-        log.info('%s plugin initialized', self.name)
-
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
-        task_config = self.get_notify_section(task, taskcluster_exchange)
-        task_id = body["status"]["taskId"]
+        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        log.debug('body:\n%s', body)
         message = 'Task %s message: %s' % (task_id, task_config['message'],)
         for attempt in range(5):
             try:
@@ -36,7 +31,7 @@ class Plugin(BasePlugin):
                                       aws_secret_access_key=self.secret_access_key)
 
                 client.publish(TopicArn=task_config['arn'], Message=message)
-                log.info('Notified with SNS!')
+                log.info('Notified with SNS for task %s' % task_id)
                 return
             except Boto3Error as b3e:
                 log.exception('Attempt %s: Boto3Error %s', str(attempt), b3e.message)

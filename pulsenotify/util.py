@@ -12,7 +12,6 @@ async def fetch_task(task_id):
         response = await session.get(url)
         return await response.json()
 
-
 async def task_term_info(body):
     task = await fetch_task(body["status"]["taskId"])
     name = task["metadata"]["name"]

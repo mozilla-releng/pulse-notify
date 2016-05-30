@@ -26,7 +26,7 @@ class Plugin(BasePlugin):
         - SMTP_PORT (port of host)
         - SMTP_TEMPLATE (True/False indicator to use template)
 
-    In each task, under extra/<desired exchange>, there must be an object with the following schema:
+    In each task, under extra/notification/<desired exchange>, there must be an object with the following schema:
         - subject (of email)
         - recipients (who to notify)
         - body (of email in text format)

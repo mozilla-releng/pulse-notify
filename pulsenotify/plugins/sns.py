@@ -15,7 +15,7 @@ class Plugin(AWSPlugin):
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
 
-    In each task, under extra/<desired exchange>, there must be an object with the following schema:
+    In each task, under extra/notification/<desired exchange>, there must be an object with the following schema:
         - arn (Amazon resource number of SNS topic to deliver notification to)
         - message (body of the notification message)
     """

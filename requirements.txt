@@ -1,3 +1,4 @@
+asyncirc
 uvloop
 jinja2
 boto3

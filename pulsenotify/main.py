@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 import os
-import sys  # TODO: remove when in prod (only use is to send log to stdout)
+import sys
 from blessings import Terminal
 from pulsenotify.consumer import NotifyConsumer
 from pulsenotify import event_loop
@@ -59,7 +59,7 @@ def cli():
         event_loop.run_forever()
     except KeyboardInterrupt as ke:
         # TODO: make better shutdown
-        log.exception('KeyboardInterrupt registered: exiting.')
+        log.exception('KeyboardInterrupt registered, exiting.')
         event_loop.stop()
         while event_loop.is_running():
             pass

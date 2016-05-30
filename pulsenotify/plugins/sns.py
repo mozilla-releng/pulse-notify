@@ -22,7 +22,6 @@ class Plugin(AWSPlugin):
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)
-        log.debug('body:\n%s', body)
         message = 'Task %s message: %s' % (task_id, task_config['message'],)
         for attempt in range(5):
             try:

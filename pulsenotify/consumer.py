@@ -29,9 +29,7 @@ class NotifyConsumer(object):
 
     @property
     def exchanges(self):
-        #return EXCHANGES
-        return ["exchange/taskcluster-queue/v1/task-completed",
-                "exchange/taskcluster-queue/v1/task-defined"]  # TODO: Change, for testing only
+        return EXCHANGES
 
     async def dispatch(self, channel, body, envelope, properties):
         log.info('Dispatch called.')

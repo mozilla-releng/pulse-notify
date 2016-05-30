@@ -5,7 +5,6 @@ log = logging.getLogger(__name__)
 
 
 class BasePlugin(object):
-
     def __init__(self):
         log('%s plugin initialized', self.name)
 
@@ -16,6 +15,9 @@ class BasePlugin(object):
     def task_info(self, body, task, taskcluster_exchange):
         return (task['extra']['notification'][taskcluster_exchange][self.name],
                 body["status"]["taskId"],)
+
+    def get_logs_urls(self, task_id, runs):
+        return ['https://{}.s3.amazonaws.com/{}_run{}_log'.format(os.environ['S3_BUCKET'], task_id, run['runId']) for run in runs]
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         log.error('Notify not implemented for %s', self.name)

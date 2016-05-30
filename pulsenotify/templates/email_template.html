@@ -485,7 +485,14 @@
                                             <td valign="top" class="bodyContent" mc:edit="body_content00">
                                                 <h1>{{ subject }}</h1>
                                                 <h3><i>{{ body }}</i></h3>
-                                                This notification sent from the Pulse Notify system.
+                                                {% if logs is defined %}
+                                                    If log_collect plugin is on, ogs <i>should</i> be present at:
+                                                    <ul>
+                                                        {% for log in logs %}
+                                                            <li>{{ log }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% endif %}
                                             </td>
                                         	<td class="bodyContent" style="padding-top:0; padding-bottom:0;">
                                             	<img src="https://avatars0.githubusercontent.com/u/6257436?v=3&s=200" style="max-width:560px;" id="bodyImage" mc:label="body_image" mc:edit="body_image" mc:allowtext />

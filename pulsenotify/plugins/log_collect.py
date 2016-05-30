@@ -1,6 +1,8 @@
 import logging
-import aiohttp
 import gzip
+import os
+
+import aiohttp
 import boto3
 from . import AWSPlugin
 
@@ -8,22 +10,25 @@ log = logging.getLogger(__name__)
 
 PUBLIC_LOG_URL = "https://queue.taskcluster.net/v1/task/{}/runs/{}/artifacts/public/logs/live.log"
 S3_KEY_TEMPLATE = '{}_run{}_log'
-HEADER = dict(ACL='public-read',
-              ContentType='text/plain',
-              ContentEncoding='gzip')
+HEADER = {
+    'ACL': 'public-read',
+    'ContentType': 'text/plain',
+    'ContentEncoding': 'gzip',
+}
 
 
 class Plugin(AWSPlugin):
-    """
-    Compression details:
-    https://docs.python.org/3.5/library/archiving.html
-    """
+
+    def __init__(self):
+        super(Plugin, self).__init__()
+        self.s3_bucket = os.environ['S3_BUCKET']
+
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         s3 = boto3.resource('s3',   aws_access_key_id=self.access_key_id,
                                     aws_secret_access_key=self.secret_access_key)
-        log_bucket = s3.Bucket('sheehan-test')
+        log_bucket = s3.Bucket(self.s3_bucket)
 
         for run in body['status']['runs']:
             try:

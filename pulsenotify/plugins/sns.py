@@ -28,7 +28,8 @@ class Plugin(AWSPlugin):
             try:
                 sns = boto3.resource(self.name,
                                       aws_access_key_id=self.access_key_id,
-                                      aws_secret_access_key=self.secret_access_key)
+                                      aws_secret_access_key=self.secret_access_key,
+                                      region_name='us-west-2')
                 topic = sns.Topic(task_config['arn'])
 
                 topic.publish(Subject='Task {} message from exchange {}'.format(task_id, taskcluster_exchange),

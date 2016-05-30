@@ -26,11 +26,13 @@ class Plugin(AWSPlugin):
         message = 'Task %s message: %s' % (task_id, task_config['message'],)
         for attempt in range(5):
             try:
-                client = boto3.client(self.name,
+                sns = boto3.resource(self.name,
                                       aws_access_key_id=self.access_key_id,
                                       aws_secret_access_key=self.secret_access_key)
+                topic = sns.Topic(task_config['arn'])
 
-                client.publish(TopicArn=task_config['arn'], Message=message)
+                topic.publish(Subject='Task {} message from exchange {}'.format(task_id, taskcluster_exchange),
+                              Message=message)
                 log.info('Notified with SNS for task %s' % task_id)
                 return
             except Boto3Error as b3e:

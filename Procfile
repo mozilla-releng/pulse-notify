@@ -1,1 +1,1 @@
-web: python3 pulsenotify/main.py -v
+worker: python3 pulsenotify/main.py -v

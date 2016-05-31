@@ -9,7 +9,6 @@ from . import AWSPlugin
 log = logging.getLogger(__name__)
 
 PUBLIC_LOG_URL = "https://queue.taskcluster.net/v1/task/{}/runs/{}/artifacts/public/logs/live.log"
-S3_KEY_TEMPLATE = '{}_run{}_log'
 HEADER = {
     'ACL': 'public-read',
     'ContentType': 'text/plain',
@@ -32,7 +31,7 @@ class Plugin(AWSPlugin):
 
         for run in body['status']['runs']:
             try:
-                s3_key = S3_KEY_TEMPLATE.format(task_id, run['runId'])
+                s3_key = self.S3_KEY_TEMPLATE.format(task_id, run['runId'])
                 artifact = await self.get_artifact(task_id, run['runId'])
                 artifact_gzip = gzip.compress(bytes(artifact, 'utf-8'))
 

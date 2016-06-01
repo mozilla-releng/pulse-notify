@@ -20,7 +20,10 @@ class BasePlugin(object):
                 body["status"]["taskId"],)
 
     def get_logs_urls(self, task_id, runs):
-        return ['https://{}.s3.amazonaws.com/{}'.format(os.environ['S3_BUCKET'], self.S3_KEY_TEMPLATE.format(task_id, run['runId'])) for run in runs]
+        if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
+            return ['https://{}.s3.amazonaws.com/{}'.format(os.environ['S3_BUCKET'], self.S3_KEY_TEMPLATE.format(task_id, run['runId'])) for run in runs]
+        else:
+            return None
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         log.error('Notify not implemented for %s', self.name)

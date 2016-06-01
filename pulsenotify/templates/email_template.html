@@ -485,8 +485,8 @@
                                             <td valign="top" class="bodyContent" mc:edit="body_content00">
                                                 <h1>{{ subject }}</h1>
                                                 <h3><i>{{ body }}</i></h3>
-                                                {% if logs is defined %}
-                                                    If log_collect plugin is on, ogs <i>should</i> be present at:
+                                                {% if logs is not none %}
+                                                    Logs <i>should</i> be present at:
                                                     <ul>
                                                         {% for log in logs %}
                                                             <li>{{ log }}</li>

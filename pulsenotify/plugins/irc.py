@@ -37,13 +37,17 @@ class Plugin(BasePlugin):
             self.irc_client.send('PONG', message=message)
 
         @self.irc_client.on('PRIVMSG')
-        async def irc_notify(task_id=None, exch=None, **kwargs):
-            self.irc_client.send('privmsg', target='#testchan', message='Task {} has achieved status {}'.format(task_id, exch))
+        async def irc_notify(task_id=None, exch=None, config=None, **kwargs):
+            if not any([task_id, exch, config]):
+                log.debug('One of IRC notify kwargs is None!')
+            else:
+                task_message = '{} Pulse Notification for task {}! {}'.format(': '.join(config['notify_nicks']), task_id, config['message'])
+                self.irc_client.send('privmsg', target='#testchan', message=task_message)
 
         self.irc_client.loop.create_task(self.irc_client.connect())
         log.info('{} plugin initialized.'.format(self.name))
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)
-        self.irc_client.trigger('PRIVMSG', task_id=task_id, exch=taskcluster_exchange)
+        self.irc_client.trigger('PRIVMSG', task_id=task_id, config=task_config, exch=taskcluster_exchange)
         log.info('Notified with IRC for task %s' % task_id)

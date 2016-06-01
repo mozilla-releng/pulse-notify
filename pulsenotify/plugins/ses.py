@@ -17,7 +17,7 @@ env = Environment(loader=PackageLoader('pulsenotify', 'templates'))
 class Plugin(AWSPlugin):
 
     def __init__(self):
-        super(Plugin, self).__init__()
+        super().__init__()
         self.from_email = os.environ['SES_EMAIL']
         self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
 

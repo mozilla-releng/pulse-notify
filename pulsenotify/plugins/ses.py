@@ -5,6 +5,7 @@ import os
 import datetime
 
 from . import AWSPlugin
+from pulsenotify.util import async_time_me
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jinja2 import PackageLoader, Environment
@@ -21,6 +22,7 @@ class Plugin(AWSPlugin):
         self.from_email = os.environ['SES_EMAIL']
         self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
 
+    @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 

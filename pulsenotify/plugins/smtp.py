@@ -8,6 +8,7 @@ from smtplib import SMTPConnectError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jinja2 import PackageLoader, Environment
+from pulsenotify.util import async_time_me
 
 
 log = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class Plugin(BasePlugin):
         self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
         log.info('%s plugin initialized', self.name)
 
+    @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 

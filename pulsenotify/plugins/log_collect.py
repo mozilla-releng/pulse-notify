@@ -5,6 +5,7 @@ import os
 import aiohttp
 import boto3
 from . import AWSPlugin
+from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ class Plugin(AWSPlugin):
         super(Plugin, self).__init__()
         self.s3_bucket = os.environ['S3_BUCKET']
 
+    @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 

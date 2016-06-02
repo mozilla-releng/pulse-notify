@@ -3,6 +3,7 @@ import boto3
 from boto3.exceptions import Boto3Error
 import logging
 import os
+from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class Plugin(AWSPlugin):
         - arn (Amazon resource number of SNS topic to deliver notification to)
         - message (body of the notification message)
     """
+    @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
         task_config, task_id = self.task_info(body, task, taskcluster_exchange)

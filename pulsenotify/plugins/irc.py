@@ -39,7 +39,7 @@ class Plugin(BasePlugin):
 
         @self.irc_client.on('PRIVMSG')
         async def irc_notify(task_id=None, exch=None, config=None, subject=None, message=None, **kwargs):
-            if not all([task_id, exch, config, subject, message]):
+            if not all(v is not None for v in [task_id, exch, config, subject, message]):
                 log.debug('One of IRC notify kwargs is None!')
             else:
                 task_message = '{recip} - Task {task_id} {subject}: {message}'.format(recip=': '.join(config['notify_nicks']),

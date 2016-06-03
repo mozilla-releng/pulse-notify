@@ -44,7 +44,7 @@ class Plugin(BasePlugin):
             else:
                 task_message = '{recip} - Task {task_id} {subject}: {message}. Logs: ({log_sep})'.format(recip=': '.join(config['notify_nicks']),
                                                                     task_id=task_id, message=message, subject=subject,
-                                                                    logs=logs)
+                                                                    log_sep=logs)
                 self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=task_message)
 
         self.irc_client.loop.create_task(self.irc_client.connect())

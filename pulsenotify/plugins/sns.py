@@ -24,6 +24,10 @@ class Plugin(AWSPlugin):
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
         subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+
+        if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
+            message += "\nThere should be some logs at \n{}".format('\n'.join(self.get_logs_urls(task_id, body['status']['runs'])))
+
         for attempt in range(5):
             try:
                 sns = boto3.resource(self.name,

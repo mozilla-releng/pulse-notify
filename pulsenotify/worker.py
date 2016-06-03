@@ -22,7 +22,7 @@ async def worker(consumer):
                             connection_global=False)
     queue_name = 'queue/%s/%s' % (os.environ['PULSE_LOGIN'], os.environ['PULSE_QUEUE'],)
     log.info("Using queue: %s", queue_name)
-    await channel.queue_declare(queue_name=queue_name, durable=True)
+    await channel.queue_declare(queue_name=queue_name, durable=True, exclusive=True)
     for e in consumer.exchanges:
         log.info("Binding %s using %s", e, consumer.routing_key)
         await channel.queue_bind(exchange_name=e, queue_name=queue_name,

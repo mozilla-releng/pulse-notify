@@ -38,11 +38,12 @@ class Plugin(BasePlugin):
             self.irc_client.send('PONG', message=message)
 
         @self.irc_client.on('PRIVMSG')
-        async def irc_notify(task_id=None, exch=None, config=None, **kwargs):
-            if not all([task_id, exch, config]):
+        async def irc_notify(task_id=None, exch=None, config=None, subject=None, message=None, **kwargs):
+            if not all([task_id, exch, config, subject, message]):
                 log.debug('One of IRC notify kwargs is None!')
             else:
-                task_message = '{} Pulse Notification for task {}! {}'.format(': '.join(config['notify_nicks']), task_id, config['message'])
+                task_message = '{recip} - Task {task_id} {subject}: {message}'.format(recip=': '.join(config['notify_nicks']),
+                                                                    task_id=task_id, message=message, subject=subject)
                 self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=task_message)
 
         self.irc_client.loop.create_task(self.irc_client.connect())
@@ -50,6 +51,11 @@ class Plugin(BasePlugin):
 
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
-        self.irc_client.trigger('PRIVMSG', task_id=task_id, config=task_config, exch=taskcluster_exchange)
+        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        self.irc_client.trigger('PRIVMSG',
+                                task_id=task_id,
+                                config=task_config,
+                                exch=taskcluster_exchange,
+                                message=message,
+                                subject=subject)
         log.info('Notified with IRC for task %s' % task_id)

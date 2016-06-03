@@ -42,17 +42,18 @@ class Plugin(BasePlugin):
 
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         email_message = MIMEMultipart()
-        email_message['Subject'] = 'Task %s: %s' % (task_id, task_config['subject'],)
+        email_message['Subject'] = subject
         email_message['To'] = ', '.join(task_config['recipients'])
 
         if self.template:
-            rendered_email = self.template.render(task_config, date=datetime.datetime.now().strftime('%b %d, %Y'))
+            rendered_email = self.template.render(task_config, date=datetime.datetime.now().strftime('%b %d, %Y'),
+                                                  subject=subject, body=message)
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
-            email_message.attach(MIMEText(task_config['body'], 'text'))
+            email_message.attach(MIMEText(message, 'text'))
 
         for attempt in range(5):
             try:

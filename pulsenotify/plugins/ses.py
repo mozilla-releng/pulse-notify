@@ -24,18 +24,19 @@ class Plugin(AWSPlugin):
 
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         email_message = MIMEMultipart()
-        email_message['Subject'] = 'Task %s: %s' % (task_id, task_config['subject'],)
+        email_message['Subject'] = subject
 
         if self.template:
-            rendered_email = self.template.render(task_config,
+            rendered_email = self.template.render(subject=subject,
+                                                  body=message,
                                                   date=datetime.datetime.now().strftime('%b %d, %Y'),
                                                   logs=self.get_logs_urls(task_id, body['status']['runs']))
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
-            email_message.attach(MIMEText(task_config['body'], 'text'))
+            email_message.attach(MIMEText(message, 'text'))
 
         for attempt in range(5):
             try:

@@ -23,8 +23,7 @@ class Plugin(AWSPlugin):
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
-        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
-        message = 'Task %s message: %s' % (task_id, task_config['message'],)
+        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
         for attempt in range(5):
             try:
                 sns = boto3.resource(self.name,
@@ -33,8 +32,7 @@ class Plugin(AWSPlugin):
                                       region_name='us-west-2')
                 topic = sns.Topic(task_config['arn'])
 
-                topic.publish(Subject='Task {} message from exchange {}'.format(task_id, taskcluster_exchange),
-                              Message=message)
+                topic.publish(Subject=subject, Message=message)
                 log.info('Notified with SNS for task %s' % task_id)
                 return
             except Boto3Error as b3e:

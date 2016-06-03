@@ -8,11 +8,11 @@ from pulsenotify.util import async_time_me
 log = logging.getLogger(__name__)
 
 EXCHANGES = [
-    "exchange/taskcluster-queue/v1/task-defined",
+    #"exchange/taskcluster-queue/v1/task-defined",
     # "exchange/taskcluster-queue/v1/task-pending",
     # "exchange/taskcluster-queue/v1/task-running",
     # "exchange/taskcluster-queue/v1/artifact-created",
-    # "exchange/taskcluster-queue/v1/task-completed",
+    "exchange/taskcluster-queue/v1/task-completed",
     # "exchange/taskcluster-queue/v1/task-failed",
     # "exchange/taskcluster-queue/v1/task-exception",
 ]
@@ -32,7 +32,7 @@ class NotifyConsumer(object):
     def exchanges(self):
         return EXCHANGES
 
-    #@async_time_me
+    @async_time_me
     async def dispatch(self, channel, body, envelope, properties):
         log.info('Dispatch called.')
         taskcluster_exchange = envelope.exchange_name.split('/')[-1]
@@ -41,7 +41,7 @@ class NotifyConsumer(object):
         task = await fetch_task(task_id)
 
         try:
-            enabled_plugins = task['extra']['notification'][taskcluster_exchange]
+            enabled_plugins = task['extra']['notification'][taskcluster_exchange]['plugins']
             for service in filter(lambda obj: obj.name in enabled_plugins, self.service_objects):
                 try:
                     await service.notify(channel, body, envelope, properties, task, taskcluster_exchange)

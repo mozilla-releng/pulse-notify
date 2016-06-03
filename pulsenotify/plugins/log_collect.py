@@ -25,7 +25,7 @@ class Plugin(AWSPlugin):
 
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        _, _, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         s3 = boto3.resource('s3',   aws_access_key_id=self.access_key_id,
                                     aws_secret_access_key=self.secret_access_key)

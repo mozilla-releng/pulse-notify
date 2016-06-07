@@ -4,12 +4,10 @@ import influxdb
 import os
 from time import time
 from functools import wraps
-from blessings import Terminal
 
 log = logging.getLogger(__name__)
 
 db_cnxn = influxdb.InfluxDBClient(database='time_notifications')
-
 
 
 async def fetch_task(task_id):
@@ -18,15 +16,6 @@ async def fetch_task(task_id):
     with aiohttp.Timeout(10), aiohttp.ClientSession() as session:
         response = await session.get(url)
         return await response.json()
-
-
-async def task_term_info(body):
-    task = await fetch_task(body["status"]["taskId"])
-    name = task["metadata"]["name"]
-    description = task["metadata"]["description"]
-    task_id = body["status"]["taskId"]
-    t = Terminal()
-    return "{} {} {}".format(t.bold(task_id), name, t.dim(description))
 
 
 def async_time_me(f):
@@ -41,7 +30,7 @@ def async_time_me(f):
                 "measurement": "notify_timing",
                 "tags": {
                     "host": "local",
-                    "service": "dispatch/none"
+                    "service": f.__module__.split('.')[-1]
                 },
                 "fields": {
                     "elapsed_time": str(t_f - t_i)

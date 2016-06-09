@@ -15,11 +15,12 @@ class Plugin(AWSPlugin):
     The following environment variables must be present for the plugin to function:
         - AWS_ACCESS_KEY_ID
         - AWS_SECRET_ACCESS_KEY
-
-    In each task, under extra/notification/<desired exchange>, there must be an object with the following schema:
-        - arn (Amazon resource number of SNS topic to deliver notification to)
-        - message (body of the notification message)
+        - SNS_ARN
     """
+    def __init__(self):
+        super().__init__()
+        self.arn = os.environ['SNS_ARN']
+
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
@@ -34,7 +35,7 @@ class Plugin(AWSPlugin):
                                       aws_access_key_id=self.access_key_id,
                                       aws_secret_access_key=self.secret_access_key,
                                       region_name='us-west-2')
-                topic = sns.Topic(task_config['arn'])
+                topic = sns.Topic(self.arn)
 
                 topic.publish(Subject=subject, Message=message)
                 log.info('Notified with SNS for task %s' % task_id)

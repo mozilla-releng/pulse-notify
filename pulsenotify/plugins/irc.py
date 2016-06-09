@@ -7,11 +7,45 @@ from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
 
+IRC_CODES = {
+    'BOLD': '\u0002',
+    'ITALIC': '\35',
+    'UNDERLINE': '\37',
+    'RED': '\u000304',
+    'GREEN': '\u000303',
+    'BLUE': '\u000302',
+    'YELLOW': '\u000308',
+}
+
+COLOUR_MAP = {
+    'task-completed': 'GREEN',
+    'task-failed': 'RED',
+    'artifact-created': 'BLUE',
+    'task-exception': 'YELLOW',
+}
+
+NOTIFY_SIGNAL_NAME = 'SEND_NOTIFY'
+
+
+def irc_format(string, fmt_type):
+    fmt_type = COLOUR_MAP.get(fmt_type, fmt_type)
+    return '{0}{1}{0}'.format(IRC_CODES[fmt_type], string)
+
 
 class Plugin(BasePlugin):
     """
     Internet Relay Chat Plugin for the Pulse Notification system
-    TODO: implement!
+
+    The following environment variables must be present for the plugin to function:
+        - IRC_HOST
+        - IRC_NAME
+        - IRC_NICK
+        - IRC_PORT
+        - IRC_CHAN
+        - IRC_PASS
+
+    In each task, under extra/notification/<desired exchange>/plugins/, there must be an object with the following schema:
+        - recipients
     """
 
     def __init__(self):
@@ -37,27 +71,48 @@ class Plugin(BasePlugin):
         def keep_alive(message, **kwargs):
             self.irc_client.send('PONG', message=message)
 
-        @self.irc_client.on('PRIVMSG')
-        async def irc_notify(task_id=None, exch=None, config=None, subject=None, message=None, logs=None, **kwargs):
-            if not all(v is not None for v in [task_id, exch, config, subject, message]):
+        @self.irc_client.on(NOTIFY_SIGNAL_NAME)
+        @async_time_me
+        async def irc_notify(task_id=None, config=None, subject=None, message=None, logs=None, exch=None, **kwargs):
+            if not all(v is not None for v in [task_id, subject, message, exch]):
                 log.debug('One of IRC notify kwargs is None!')
+                log.debug('task_id: %s', task_id)
+                log.debug('subject: %s', subject)
+                log.debug('message: %s', message)
+                log.debug('exch: %s', exch)
             else:
-                task_message = '{recip} - Task {task_id} {subject}: {message}. Logs: ({log_sep})'.format(recip=': '.join(config['notify_nicks']),
-                                                                    task_id=task_id, message=message, subject=subject,
-                                                                    log_sep=logs)
-                self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=task_message)
+
+                try:
+                    recipients = ': '.join(config['recipients']) + ' ' if config['recipients'] is not None else ''
+                except TypeError as te:
+                    recipients = ''
+                    log.debug('IRC config TypeError')
+
+                task_message = '{recip}{task_id} {subject}: {message}.'.format(
+                    recip=irc_format(recipients, 'ITALIC'),
+                    task_id=irc_format(irc_format(task_id, 'BOLD'), 'UNDERLINE'),
+                    message=message,
+                    subject=irc_format(subject, 'BOLD'))
+
+                if logs is not None:
+                    task_message += ' Logs: ({log_sep})'.format(log_sep=logs)
+
+                self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=irc_format(task_message, exch))
 
         self.irc_client.loop.create_task(self.irc_client.connect())
         log.info('{} plugin initialized.'.format(self.name))
 
-    @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
-        self.irc_client.trigger('PRIVMSG',
+
+        log_urls = self.get_logs_urls(task_id, body['status']['runs'])
+        logs = ', '.join(log_urls) if type(log_urls) is list else None
+
+        self.irc_client.trigger(NOTIFY_SIGNAL_NAME,
                                 task_id=task_id,
                                 config=task_config,
-                                exch=taskcluster_exchange,
                                 message=message,
                                 subject=subject,
-                                logs=', '.join(self.get_logs_urls(task_id, body['status']['runs'])))
+                                logs=logs,
+                                exch=taskcluster_exchange)
         log.info('Notified with IRC for task %s' % task_id)

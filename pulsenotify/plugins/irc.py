@@ -73,17 +73,14 @@ class Plugin(BasePlugin):
 
         @self.irc_client.on(NOTIFY_SIGNAL_NAME)
         @async_time_me
-        async def irc_notify(task_id=None, config=None, subject=None, message=None, logs=None, exch=None, **kwargs):
+        async def irc_notify(task_id=None, exchange_config=None, subject=None, message=None, logs=None, exch=None, **kwargs):
             if not all(v is not None for v in [task_id, subject, message, exch]):
                 log.debug('One of IRC notify kwargs is None!')
-                log.debug('task_id: %s', task_id)
-                log.debug('subject: %s', subject)
-                log.debug('message: %s', message)
-                log.debug('exch: %s', exch)
             else:
 
                 try:
-                    recipients = ': '.join(config['recipients']) + ' ' if config['recipients'] is not None else ''
+                    recipients = ': '.join(exchange_config['nicks']) + ' ' if exchange_config['nicks'] is not None \
+                        else ''
                 except TypeError as te:
                     recipients = ''
                     log.debug('IRC config TypeError')
@@ -103,14 +100,14 @@ class Plugin(BasePlugin):
         log.info('{} plugin initialized.'.format(self.name))
 
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         log_urls = self.get_logs_urls(task_id, body['status']['runs'])
         logs = ', '.join(log_urls) if type(log_urls) is list else None
 
         self.irc_client.trigger(NOTIFY_SIGNAL_NAME,
                                 task_id=task_id,
-                                config=task_config,
+                                config=exchange_config,
                                 message=message,
                                 subject=subject,
                                 logs=logs,

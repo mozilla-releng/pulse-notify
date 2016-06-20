@@ -49,8 +49,11 @@ class Plugin(BasePlugin):
         email_message['To'] = ', '.join(task_config['recipients'])
 
         if self.template:
-            rendered_email = self.template.render(task_config, date=datetime.datetime.now().strftime('%b %d, %Y'),
-                                                  subject=subject, body=message)
+            rendered_email = self.template.render(task_config,
+                                                  date=datetime.datetime.now().strftime('%b %d, %Y'),
+                                                  subject=subject,
+                                                  body=message,
+                                                  logs=self.get_logs_urls(task_id, body['status']['runs']))
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
             email_message.attach(MIMEText(message, 'text'))

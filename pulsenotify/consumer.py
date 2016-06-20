@@ -20,11 +20,10 @@ EXCHANGES = [
 
 class NotifyConsumer(object):
     routing_key = 'route.connor'
-    #routing_key = 'route.index.releases.v1.#'
+    # routing_key = 'route.index.releases.v1.#'
 
     def __init__(self, services_list):
         self.notifiers = {service: import_module('pulsenotify.plugins.' + service).Plugin() for service in services_list}
-        self.test_sent = 0
         log.info('Consumer initialized.')
 
     @property

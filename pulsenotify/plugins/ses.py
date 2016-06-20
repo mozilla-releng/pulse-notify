@@ -24,7 +24,7 @@ class Plugin(AWSPlugin):
 
     @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
-        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         email_message = MIMEMultipart()
         email_message['Subject'] = subject
@@ -43,15 +43,13 @@ class Plugin(AWSPlugin):
                 ses = boto3.client(self.name,
                                     aws_access_key_id=self.access_key_id,
                                     aws_secret_access_key=self.secret_access_key,
-                                    region_name='us-west-2'
-                )
+                                    region_name='us-west-2')
 
                 raw_message = {'Data': email_message.as_string()}
 
                 ses.send_raw_email(RawMessage=raw_message,
                                    Source=self.from_email,
-                                   Destinations=task_config['recipients']
-                )
+                                   Destinations=exchange_config['emails'])
 
                 log.info('Notified with SES for task %s' % task_id)
                 return

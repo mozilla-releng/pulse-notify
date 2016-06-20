@@ -11,7 +11,7 @@ setup(
     license='',
     author='Connor Sheehan',
     author_email='csheehan@mozilla.com',
-    description='',
+    description='Sends notifications based on taskcluster task statuses.',
     install_requires=reqs,
     entry_points="""
         [console_scripts]

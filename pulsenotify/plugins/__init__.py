@@ -1,6 +1,8 @@
 import logging
 import os
 
+from pulsenotify.util import async_time_me
+
 log = logging.getLogger(__name__)
 
 
@@ -31,9 +33,9 @@ class BasePlugin(object):
         message = message.format(task_id=task_id)
         subject = subject.format(task_id=task_id)
 
-        task_config = task['extra']['notification'][taskcluster_exchange]['plugins'][self.name]
+        exchange_config = task['extra']['notification'][taskcluster_exchange]
 
-        return subject, message, task_config, task_id
+        return subject, message, exchange_config, task_id
 
     def get_logs_urls(self, task_id, runs):
         if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
@@ -41,6 +43,7 @@ class BasePlugin(object):
         else:
             return None
 
+    @async_time_me
     async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
         log.error('Notify not implemented for %s', self.name)
         return None

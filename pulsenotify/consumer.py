@@ -8,19 +8,19 @@ from pulsenotify.util import async_time_me
 log = logging.getLogger(__name__)
 
 EXCHANGES = [
-    "exchange/taskcluster-queue/v1/task-defined",
+    # "exchange/taskcluster-queue/v1/task-defined",
     # "exchange/taskcluster-queue/v1/task-pending",
     # "exchange/taskcluster-queue/v1/task-running",
-    # "exchange/taskcluster-queue/v1/artifact-created",
-    # "exchange/taskcluster-queue/v1/task-completed",
-    # "exchange/taskcluster-queue/v1/task-failed",
-    # "exchange/taskcluster-queue/v1/task-exception",
+    "exchange/taskcluster-queue/v1/artifact-created",
+    "exchange/taskcluster-queue/v1/task-completed",
+    "exchange/taskcluster-queue/v1/task-failed",
+    "exchange/taskcluster-queue/v1/task-exception",
 ]
 
 
 class NotifyConsumer(object):
-    routing_key = 'route.connor'
-    # routing_key = 'route.index.releases.v1.#'
+    # routing_key = 'route.connor'
+    routing_key = 'route.index.releases.v1.#'
 
     def __init__(self, services_list):
         self.notifiers = {service: import_module('pulsenotify.plugins.' + service).Plugin() for service in services_list}

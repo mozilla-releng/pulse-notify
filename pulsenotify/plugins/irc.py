@@ -25,6 +25,7 @@ COLOUR_MAP = {
 }
 
 NOTIFY_SIGNAL_NAME = 'SEND_NOTIFY'
+TEMP_IRC_NAME = 'TEMP_NOTIFY'
 
 
 def irc_format(string, fmt_type):
@@ -98,6 +99,14 @@ class Plugin(BasePlugin):
 
                 self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=irc_format(task_message, exch))
 
+        @self.irc_client.on(TEMP_IRC_NAME)
+        async def temp_notify(task_id=None, exch=None, logs=None, **kwargs):
+            self.irc_client.send('JOIN', channel=os.environ['IRC_CHAN'])
+            task_message = '{task_id} status: {exch}.'.format(task_id=task_id, exch=exch)
+            if logs is not None:
+                task_message += ' Logs: ({log_sep})'.format(log_sep=logs)
+            self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=irc_format(task_message, exch))
+
         self.irc_client.loop.create_task(self.irc_client.connect())
         log.info('{} plugin initialized.'.format(self.name))
 
@@ -107,11 +116,14 @@ class Plugin(BasePlugin):
         log_urls = self.get_logs_urls(task_id, body['status']['runs'])
         logs = ', '.join(log_urls) if type(log_urls) is list else None
 
-        self.irc_client.trigger(NOTIFY_SIGNAL_NAME,
-                                task_id=task_id,
-                                config=exchange_config,
-                                message=message,
-                                subject=subject,
-                                logs=logs,
-                                exch=taskcluster_exchange)
+        # self.irc_client.trigger(NOTIFY_SIGNAL_NAME,
+        #                         task_id=task_id,
+        #                         config=exchange_config,
+        #                         message=message,
+        #                         subject=subject,
+        #                         logs=logs,
+        #                         exch=taskcluster_exchange)
+
+        #  Temp IRC signal for testing
+        self.irc_client.trigger(TEMP_IRC_NAME, exch=taskcluster_exchange, logs=logs, task_id=task_id)
         log.info('Notified with IRC for task %s' % task_id)

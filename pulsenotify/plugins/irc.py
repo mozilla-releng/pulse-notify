@@ -14,14 +14,14 @@ IRC_CODES = {
     'RED': '\u000304',
     'GREEN': '\u000303',
     'BLUE': '\u000302',
-    'YELLOW': '\u000308',
+    'PURPLE': '\u000306',
 }
 
 COLOUR_MAP = {
     'task-completed': 'GREEN',
     'task-failed': 'RED',
     'artifact-created': 'BLUE',
-    'task-exception': 'YELLOW',
+    'task-exception': 'PURPLE',
 }
 
 NOTIFY_SIGNAL_NAME = 'SEND_NOTIFY'
@@ -29,7 +29,7 @@ NOTIFY_SIGNAL_NAME = 'SEND_NOTIFY'
 
 def irc_format(string, fmt_type):
     fmt_type = COLOUR_MAP.get(fmt_type, fmt_type)
-    return '{0}{1}{0}'.format(IRC_CODES[fmt_type], string)
+    return '{0}{1}{0}'.format(IRC_CODES.get(fmt_type, ''), string)
 
 
 class Plugin(BasePlugin):
@@ -77,6 +77,8 @@ class Plugin(BasePlugin):
             if not all(v is not None for v in [task_id, subject, message, exch]):
                 log.debug('One of IRC notify kwargs is None!')
             else:
+
+                self.irc_client.send('JOIN', channel=os.environ['IRC_CHAN'])
 
                 try:
                     recipients = ': '.join(exchange_config['nicks']) + ' ' if exchange_config['nicks'] is not None \

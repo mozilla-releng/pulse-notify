@@ -110,7 +110,7 @@ class Plugin(BasePlugin):
         self.irc_client.loop.create_task(self.irc_client.connect())
         log.info('{} plugin initialized.'.format(self.name))
 
-    async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
+    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
         subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         log_urls = self.get_logs_urls(task_id, body['status']['runs'])

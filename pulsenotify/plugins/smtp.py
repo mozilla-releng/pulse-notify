@@ -41,7 +41,7 @@ class Plugin(BasePlugin):
         log.info('%s plugin initialized', self.name)
 
     @async_time_me
-    async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
+    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
         subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
 
         email_message = MIMEMultipart()

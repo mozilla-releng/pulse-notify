@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 import sys
 from blessings import Terminal
 from pulsenotify.consumer import NotifyConsumer
@@ -54,7 +53,7 @@ def cli():
 
 
     try:
-        event_loop.run_until_complete(worker(NotifyConsumer(os.environ['PN_SERVICES'].split(':'))))
+        event_loop.run_until_complete(worker(NotifyConsumer()))
         event_loop.run_forever()
     except KeyboardInterrupt as ke:
         # TODO: make better shutdown

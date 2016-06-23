@@ -22,7 +22,7 @@ class Plugin(AWSPlugin):
         self.arn = os.environ['SNS_ARN']
 
     @async_time_me
-    async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
+    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
         """Perform the notification (ie email relevant addresses)"""
         subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
 

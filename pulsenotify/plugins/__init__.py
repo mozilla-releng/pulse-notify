@@ -11,7 +11,7 @@ class BasePlugin(object):
     S3_KEY_TEMPLATE = '{}_run{}_log'
 
     def __init__(self):
-        log('%s plugin initialized', self.name)
+        log.info('%s plugin initialized', self.name)
 
     @property
     def name(self):
@@ -44,7 +44,7 @@ class BasePlugin(object):
             return None
 
     @async_time_me
-    async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange):
+    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
         log.error('Notify not implemented for %s', self.name)
         return None
 

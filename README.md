@@ -7,6 +7,13 @@ Pulse-Notifier is used to take various actions based on the completion status of
 - Asynchronous AMQP consumer for Pulse messages
 - Easily extended via drop-in style plugins, due to dependency injection
 
+## Core
+
+Pulse-Notifier is an asynchronous event loop with an AMQP consumer listening for Taskcluster events on Mozilla Pulse. The consumer receives a message about the status of the task and parses the task definition for notification information. Based on the notification information, the consumer passes the necessary information to various channels of communication/action, called 'plugins'.
+
+
+
+
 ### Task Definition
 
 To recieve a notification from a task, the task definition must include an 'extra' section, with a 'notifcation' subsection. Within the notification section, each unique task status has it's notification configuration defined. Possible task statuses are:
@@ -122,3 +129,9 @@ The system is configured using a set of environment variables, detailed below:
 
 - FLUX_RECORD
     Boolean switch for logging of InfluxDB time-series data (ie performance metrics)
+
+## Tests
+
+Tests can be run with
+
+    $ py.test

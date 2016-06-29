@@ -1,15 +1,15 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('requirements.txt', 'r') as reqs_txt:
     reqs = reqs_txt.readlines()
 
 with open('README.md', 'r') as readme_txt:
-    readme = reqs_txt.read()
+    readme = readme_txt.read()
 
 setup(
     name='pulse-notify',
     version='0.2',
-    packages=['pulsenotify'],
+    packages=find_packages(),
     url='http://github.com/cgsheeh/pulse-notify',
     license='',
     author='Connor Sheehan',
@@ -21,5 +21,4 @@ setup(
         [console_scripts]
         pulse-notify = pulsenotify.main:cli
       """,
-
 )

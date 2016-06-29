@@ -1,0 +1,28 @@
+#############################
+#	pulse-notify config 	#
+PN_SERVICES=irc:log_collect
+PULSE_HOST=pulse.mozilla.org
+PULSE_LOGIN=my_username
+PULSE_PASSWORD=my_pass
+PULSE_SSL=True
+PULSE_PORT=5671
+PULSE_QUEUE=some_queue
+AWS_ACCESS_KEY_ID=key1
+AWS_SECRET_ACCESS_KEY=key2
+SNS_ARN=special_arn
+SMTP_EMAIL=email_address@host.com
+SMTP_PASSWD=email_pass
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_TEMPLATE=True
+S3_BUCKET=i_has_a_bucket
+SES_EMAIL=sender_mail
+IRC_HOST=irc.mozilla.org
+IRC_NAME="myrealname"
+IRC_PORT=6697
+IRC_NICK=nickname
+IRC_CHAN=chan
+IRC_PASS=irc_pass
+FLUX_RECORD=0
+#							#
+#############################

@@ -1,22 +1,16 @@
 # Pulse-Notifier
-
 Pulse-Notifier is used to take various actions based on the completion status of Taskcluster tasks, primarily notifications for failures and other important events. The program depends on the Taskcluster and Pulse tools at Mozilla.
 
 ### Technical Features
 - Asynchronous Python 3.5
 - Asynchronous AMQP consumer for Pulse messages
-- Easily extended via drop-in style plugins, due to dependency injection
+- Pluggable functionality/dependency injection.
 
 ## Core
-
 Pulse-Notifier is an asynchronous event loop with an AMQP consumer listening for Taskcluster events on Mozilla Pulse. The consumer receives a message about the status of the task and parses the task definition for notification information. Based on the notification information, the consumer passes the necessary information to various channels of communication/action, called 'plugins'.
 
-
-
-
 ### Task Definition
-
-To recieve a notification from a task, the task definition must include an 'extra' section, with a 'notifcation' subsection. Within the notification section, each unique task status has it's notification configuration defined. Possible task statuses are:
+To receive a notification from a task, the task definition must include an 'extra' section, with a 'notification' subsection. Within the notification section, each unique task status has it's notification configuration defined. Possible task statuses are:
 
 - task-defined
 - task-pending
@@ -66,17 +60,15 @@ The fields subject and message are not required, a simple fallback message is en
       }
 
 ### Plugins
-
 #### API/Creating Plugins
 
 Pulse-Notifier can be extended to add new functionality by adding a plugin. To create a plugin, create a class named Plugin that extends the BasePlugin class. To implement your functionality, create a method with the following signature:
 
-        async def notify(self, channel, body, envelope, properties, task, taskcluster_exchange)
+        async def notify(self, body, envelope, properties, task, taskcluster_exchange)
 
 Where channel, envelope and properties are objects passed by the basic_consume method, body is the json object passed by basic_consume converted to a dict, task is a dict representation of the task, and taskcluster_exchange is the name of the exchange the message passed through. To add the plugin to the application, put the class in it's own file and add the file to the plugins directory.
 
 ##### Base Plugins
-
 - BasePlugin
     Defines the 'name' property for the plugin as the filename the plugin is found in. Also defines the task_info and get_log_urls helper functions.
 
@@ -85,7 +77,6 @@ Where channel, envelope and properties are objects passed by the basic_consume m
 
 
 #### Existing Plugins
-
 - smtp
     Send an email using a SMTP server.
 - ses
@@ -99,7 +90,33 @@ Where channel, envelope and properties are objects passed by the basic_consume m
 - repulse
     Publish an AMQP message to Pulse.
 
-### System Configuration
+## Deployment
+
+### Heroku
+To deploy to Heroku, cd into the project directory and run
+    
+    $ heroku git:remote -a <heroku app name>
+    $ git push heroku master
+
+This will create a new git remote called 'heroku' where you can push your code. The configuration variables in the sample_env_config file can be added via
+
+    $ heroku config:set KEY=VALUE [KEY2=VALUE2, ....]
+
+You can then use the following to create instances of the service:
+
+    $ heroku ps:scale worker=<number of instances>
+    
+### Docker
+
+To build the docker image, run
+
+    $ docker build -t pulse-notify ./
+
+To run the image, put all the configuration environment variables (detailed below) in a file and run
+
+    $ docker run --rm --env-file=.env_config pulse-notify:latest
+
+### Config/Environment Variables
 
 The system is configured using a set of environment variables, detailed below:
 
@@ -131,7 +148,6 @@ The system is configured using a set of environment variables, detailed below:
     Boolean switch for logging of InfluxDB time-series data (ie performance metrics)
 
 ## Tests
-
-Tests can be run with
+Tests can be run with 
 
     $ py.test

@@ -10,7 +10,7 @@ def fake_notifying_objects():
     from pickle import load
     notify_args = {}
     for arg in ('body', 'envelope', 'properties', 'task', 'taskcluster_exchange',):
-        with open('mason_jar/%s.p' % arg, 'rb') as f:
+        with open('pulsenotify/tests/mason_jar/%s.p' % arg, 'rb') as f:
             notify_args[arg] = load(f)
     return notify_args
 
@@ -23,10 +23,7 @@ def event_loop():
         Then use a new loop every time.
     """
     from pulsenotify import event_loop as pn_loop
-    if pn_loop.is_closed():
-        return uvloop.new_event_loop()
-    else:
-        return pn_loop
+    return uvloop.new_event_loop() if pn_loop.is_closed() else pn_loop
 
 @pytest.fixture()
 def task_ids():

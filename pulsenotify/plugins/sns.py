@@ -22,9 +22,9 @@ class Plugin(AWSPlugin):
         self.arn = os.environ['SNS_ARN']
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
+    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
         """Perform the notification (ie email relevant addresses)"""
-        subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
+        subject, message = self.task_info(body, task, taskcluster_exchange)
 
         if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
             message += "\nThere should be some logs at \n{}".format('\n'.join(self.get_logs_urls(task_id, body['status']['runs'])))

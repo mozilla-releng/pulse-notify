@@ -24,9 +24,7 @@ class Plugin(AWSPlugin):
         self.s3_bucket = os.environ['S3_BUCKET']
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
-        _, _, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
-
+    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
         s3 = boto3.resource('s3',   aws_access_key_id=self.access_key_id,
                                     aws_secret_access_key=self.secret_access_key)
         log_bucket = s3.Bucket(self.s3_bucket)

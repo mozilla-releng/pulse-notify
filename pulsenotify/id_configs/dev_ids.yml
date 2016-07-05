@@ -1,0 +1,33 @@
+relman:
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_2"
+
+releng:
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_2"
+
+releng-important:
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_2"
+
+connor:
+  plugins:
+    - irc
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_1"
+
+connor2:
+  plugins:
+    - irc
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_2"

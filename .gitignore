@@ -63,3 +63,6 @@ target/
 # CONNOR
 .idea
 .env
+.env_config
+todo_list.txt
+.gitignore

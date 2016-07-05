@@ -10,4 +10,6 @@ class TestSES:
 
     def test_constructor(self, plugin):
         import os
+        assert plugin.secret_access_key == os.environ['AWS_SECRET_ACCESS_KEY']
+        assert plugin.access_key_id == os.environ['AWS_ACCESS_KEY_ID']
         assert plugin.from_email == os.environ['SES_EMAIL']

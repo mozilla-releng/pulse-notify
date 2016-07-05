@@ -31,7 +31,7 @@ Under each task status, the following fields can be defined:
 The fields subject and message are not required, a simple fallback message is enabled. Emails and nicks are also not necessary, the service will still try to notify regardless. Below is an example task definition:
 
     "extra": {
-        "notification": {
+        "notifications": {
           "task-defined": {
             "message": "This task has been defined within TaskCluster",
             "subject": "task-defined notification",
@@ -64,9 +64,11 @@ The fields subject and message are not required, a simple fallback message is en
 
 Pulse-Notifier can be extended to add new functionality by adding a plugin. To create a plugin, create a class named Plugin that extends the BasePlugin class. To implement your functionality, create a method with the following signature:
 
-        async def notify(self, body, envelope, properties, task, taskcluster_exchange)
+        async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
 
-Where channel, envelope and properties are objects passed by the basic_consume method, body is the json object passed by basic_consume converted to a dict, task is a dict representation of the task, and taskcluster_exchange is the name of the exchange the message passed through. To add the plugin to the application, put the class in it's own file and add the file to the plugins directory.
+Where body, envelope and properties are objects passed from AMQP, task is a dict representation of the task, task_id is the taskcluster task id, taskcluster_exchange is the name of the exchange the message passed through, and exchange_config is the desired notification configuration. 
+
+To add the plugin to the application, put the class in it's own file and add the file to the plugins directory.
 
 ##### Base Plugins
 - BasePlugin

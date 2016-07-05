@@ -17,25 +17,17 @@ class BasePlugin(object):
     def name(self):
         return self.__module__.split('.')[-1]
 
-    def task_info(self, body, task, taskcluster_exchange):
+    def task_info(self, config_section):
         try:  # Try to get plugin-specific message, use default if none available
-            message = task['extra']['notification'][taskcluster_exchange]['plugins'][self.name]['message']
+            message = config_section['plugins'][self.name]['message']
         except (KeyError, TypeError,):
-            message = task['extra']['notification'][taskcluster_exchange]['message']
+            message = config_section['message']
 
         try:  # Try to get plugin-specific subject, use default if none available
-            subject = task['extra']['notification'][taskcluster_exchange]['plugins'][self.name]['subject']
+            subject = config_section['plugins'][self.name]['subject']
         except (KeyError, TypeError,):
-            subject = task['extra']['notification'][taskcluster_exchange]['subject']
-
-        task_id = body["status"]["taskId"]
-
-        message = message.format(task_id=task_id)
-        subject = subject.format(task_id=task_id)
-
-        exchange_config = task['extra']['notification'][taskcluster_exchange]
-
-        return subject, message, exchange_config, task_id
+            subject = config_section['subject']
+        return subject, message
 
     def get_logs_urls(self, task_id, runs):
         if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
@@ -44,7 +36,7 @@ class BasePlugin(object):
             return None
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
+    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
         log.error('Notify not implemented for %s', self.name)
         return None
 

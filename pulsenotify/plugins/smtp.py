@@ -41,15 +41,15 @@ class Plugin(BasePlugin):
         log.info('%s plugin initialized', self.name)
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
-        subject, message, task_config, task_id = self.task_info(body, task, taskcluster_exchange)
+    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
+        subject, message = self.task_info(exchange_config)
 
         email_message = MIMEMultipart()
         email_message['Subject'] = subject
-        email_message['To'] = ', '.join(task_config['recipients'])
+        email_message['To'] = ', '.join(exchange_config['emails'])
 
         if self.template:
-            rendered_email = self.template.render(task_config,
+            rendered_email = self.template.render(exchange_config,
                                                   date=datetime.datetime.now().strftime('%b %d, %Y'),
                                                   subject=subject,
                                                   body=message,
@@ -64,7 +64,7 @@ class Plugin(BasePlugin):
                 s.ehlo()
                 s.starttls()
                 s.login(self.email, self.passwd)
-                s.sendmail(self.email, task_config['recipients'], email_message.as_string())
+                s.sendmail(self.email, exchange_config['emails'], email_message.as_string())
                 s.quit()
                 log.info("Notified on smtp for task %s" % task_id)
                 return

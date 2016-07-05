@@ -25,7 +25,6 @@ COLOUR_MAP = {
 }
 
 NOTIFY_SIGNAL_NAME = 'SEND_NOTIFY'
-TEMP_IRC_NAME = 'TEMP_NOTIFY'
 
 
 def irc_format(string, fmt_type):
@@ -65,65 +64,33 @@ class Plugin(BasePlugin):
             log.debug('Disconnect registered, reconnecting...')
             try:
                 await self.irc_client.connect()
-            except ConnectionRefusedError as cre:
-                log.exception('Connection refused.')
+            except ConnectionRefusedError:
+                log.exception('IRC reconnection refused.')
 
         @self.irc_client.on('PING')
         def keep_alive(message, **kwargs):
             self.irc_client.send('PONG', message=message)
 
         @self.irc_client.on(NOTIFY_SIGNAL_NAME)
-        @async_time_me
-        async def irc_notify(task_id=None, exchange_config=None, subject=None, message=None, logs=None, exch=None, **kwargs):
-            if not all(v is not None for v in [task_id, subject, message, exch]):
-                log.debug('One of IRC notify kwargs is None!')
-            else:
-
-                self.irc_client.send('JOIN', channel=os.environ['IRC_CHAN'])
-
-                try:
-                    recipients = ': '.join(exchange_config['nicks']) + ' ' if exchange_config['nicks'] is not None \
-                        else ''
-                except TypeError as te:
-                    recipients = ''
-                    log.debug('IRC config TypeError')
-
-                task_message = '{recip}{task_id} {subject}: {message}.'.format(
-                    recip=irc_format(recipients, 'ITALIC'),
-                    task_id=irc_format(irc_format(task_id, 'BOLD'), 'UNDERLINE'),
-                    message=message,
-                    subject=irc_format(subject, 'BOLD'))
-
-                if logs is not None:
-                    task_message += ' Logs: ({log_sep})'.format(log_sep=logs)
-
-                self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=irc_format(task_message, exch))
-
-        @self.irc_client.on(TEMP_IRC_NAME)
-        async def temp_notify(task_id=None, exch=None, logs=None, **kwargs):
-            self.irc_client.send('JOIN', channel=os.environ['IRC_CHAN'])
+        async def irc_notify(task_id=None, exch=None, logs=None, channel=None, **kwargs):
+            self.irc_client.send('JOIN', channel=channel)
             task_message = '{task_id} status: {exch}.'.format(task_id=task_id, exch=exch)
             if logs is not None:
                 task_message += ' Logs: ({log_sep})'.format(log_sep=logs)
-            self.irc_client.send('privmsg', target=os.environ['IRC_CHAN'], message=irc_format(task_message, exch))
+            self.irc_client.send('privmsg', target=channel, message=irc_format(task_message, exch))
 
         self.irc_client.loop.create_task(self.irc_client.connect())
+
         log.info('{} plugin initialized.'.format(self.name))
 
-    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
-        subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
-
+    @async_time_me
+    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
         log_urls = self.get_logs_urls(task_id, body['status']['runs'])
         logs = ', '.join(log_urls) if type(log_urls) is list else None
 
-        # self.irc_client.trigger(NOTIFY_SIGNAL_NAME,
-        #                         task_id=task_id,
-        #                         config=exchange_config,
-        #                         message=message,
-        #                         subject=subject,
-        #                         logs=logs,
-        #                         exch=taskcluster_exchange)
-
-        #  Temp IRC signal for testing
-        self.irc_client.trigger(TEMP_IRC_NAME, exch=taskcluster_exchange, logs=logs, task_id=task_id)
+        try:
+            for chan in exchange_config['channels']:
+                await self.irc_client.trigger(NOTIFY_SIGNAL_NAME, exch=taskcluster_exchange, logs=logs, task_id=task_id, channel=chan)
+        except KeyError:
+            log.debug('No channels specified in exchange config.')
         log.info('Notified with IRC for task %s' % task_id)

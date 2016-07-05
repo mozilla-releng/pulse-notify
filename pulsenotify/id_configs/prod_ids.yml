@@ -1,0 +1,28 @@
+relman:
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_2"
+
+releng:
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    -
+
+releng-important:
+  emails:
+    - releng@mozilla.com
+    - platform-ops@mozilla.com
+  channels:
+    - releng
+
+connor:
+  plugins:
+    - irc
+    - ses
+    - log_collect
+  emails:
+    - csheehan@mozilla.com
+  channels:
+    - "#sheehan_testchan_2"

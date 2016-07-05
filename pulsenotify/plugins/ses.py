@@ -23,8 +23,8 @@ class Plugin(AWSPlugin):
         self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, taskcluster_exchange):
-        subject, message, exchange_config, task_id = self.task_info(body, task, taskcluster_exchange)
+    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
+        subject, message = self.task_info(exchange_config)
 
         email_message = MIMEMultipart()
         email_message['Subject'] = subject

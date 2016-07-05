@@ -3,7 +3,7 @@ import pytest
 
 class TestSNS:
 
-    @pytest.fixture(scope='module')
+    @pytest.fixture(scope='class')
     def plugin(self):
         from pulsenotify.plugins.sns import Plugin
         return Plugin()

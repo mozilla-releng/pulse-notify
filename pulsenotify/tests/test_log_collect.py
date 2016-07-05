@@ -3,7 +3,7 @@ import pytest
 
 class TestLogCollect:
 
-    @pytest.fixture(scope='module')
+    @pytest.fixture(scope='class')
     def plugin(self):
         from pulsenotify.plugins.log_collect import Plugin
         return Plugin()
@@ -15,11 +15,12 @@ class TestLogCollect:
         assert plugin.s3_bucket == os.environ['S3_BUCKET']
 
     @pytest.mark.asyncio
-    async def test_notify(self, plugin):
-        assert plugin.name == 'log_collect'
-
-    @pytest.mark.asyncio
     async def test_get_artifact(self, plugin, task_ids):
         artifact = await plugin.get_artifact(task_ids['REAL_TASK'], '0')
         assert type(artifact) is str
         assert task_ids['REAL_TASK'] in artifact
+
+    @pytest.mark.asyncio
+    async def test_notify(self, plugin):
+        plugin.notify()
+        assert plugin.name == 'log_collect'

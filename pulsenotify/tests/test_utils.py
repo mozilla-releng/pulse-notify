@@ -1,7 +1,7 @@
 import pytest
+#from hypothesis import
 
-
-class TestFetch_Task:
+class TestFetchTask:
 
     @pytest.mark.asyncio
     async def test_real_task(self, task_ids):
@@ -11,7 +11,6 @@ class TestFetch_Task:
 
         assert type(resp) is dict
         assert resp['taskGroupId'] == "BZLGDtMDRjK4YigfYqTR7Q"
-
 
     @pytest.mark.asyncio
     async def test_fake_task(self, task_ids):

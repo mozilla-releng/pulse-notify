@@ -5,9 +5,14 @@ relman:
     - "#sheehan_testchan_2"
 
 releng:
+  plugins:
+    - irc
+    - ses
+    - log_collect
   emails:
     - csheehan@mozilla.com
   channels:
+    - "#sheehan_testchan_1"
     - "#sheehan_testchan_2"
 
 releng-important:
@@ -19,6 +24,8 @@ releng-important:
 connor:
   plugins:
     - irc
+    - ses
+    - log_collect
   emails:
     - csheehan@mozilla.com
   channels:

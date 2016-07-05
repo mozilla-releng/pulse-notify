@@ -70,6 +70,9 @@ class NotifyConsumer(object):
                                for id_name, id_config in self.identities.items()
                                if id_name in original_section.get('ids', {}) or id_name is 'default'}
 
+            import pprint
+            pprint.pprint(notify_sections)
+
             for id_name, id_section in notify_sections.items():
                 try:
                     enabled_plugins = id_section['plugins']
@@ -79,9 +82,11 @@ class NotifyConsumer(object):
                                                                      full_task, task_id, taskcluster_exchange, id_section)  # Taskcluster/Notification
                         except KeyError:
                             log.exception("%s produced a KeyError for task %s and id %s", plugin_name, task_id, id_name)
-                except (KeyError, TypeError,):
+                except (KeyError, TypeError,) as e:
                     log.debug('Plugins section missing from %s notification section', id_name)
+                    log.exception('Error type: %s', type(e))
         except KeyError as ke:
+            #  TODO: clarify
             log.debug('%s raised trying to notify for task %s.', ke, task_id)
         except TypeError as te:
             log.debug('TypeError %s', te)

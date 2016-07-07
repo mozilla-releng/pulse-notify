@@ -51,7 +51,6 @@ def cli():
     root_logger.setLevel(logging.NOTSET)
     root_logger.addHandler(clihandler)
 
-
     try:
         event_loop.run_until_complete(worker(NotifyConsumer()))
         event_loop.run_forever()

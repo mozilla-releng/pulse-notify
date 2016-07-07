@@ -24,8 +24,8 @@ releng-important:
 connor:
   plugins:
     - irc
-    - ses
     - log_collect
+    - ses
   emails:
     - csheehan@mozilla.com
   channels:

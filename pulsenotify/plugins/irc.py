@@ -72,9 +72,9 @@ class Plugin(BasePlugin):
             self.irc_client.send('PONG', message=message)
 
         @self.irc_client.on(NOTIFY_SIGNAL_NAME)
-        async def irc_notify(task_id=None, exch=None, logs=None, channel=None, **kwargs):
+        async def irc_notify(task_id=None, exch=None, logs=None, channel=None, message=None, **kwargs):
             self.irc_client.send('JOIN', channel=channel)
-            task_message = '{task_id} status: {exch}.'.format(task_id=task_id, exch=exch)
+            task_message = '{task_id}: {message}'.format(task_id=task_id, message=message)
             if logs is not None:
                 task_message += ' Logs: ({log_sep})'.format(log_sep=logs)
             self.irc_client.send('privmsg', target=channel, message=irc_format(task_message, exch))
@@ -83,14 +83,18 @@ class Plugin(BasePlugin):
 
         log.info('{} plugin initialized.'.format(self.name))
 
-    @async_time_me
     async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
         log_urls = self.get_logs_urls(task_id, body['status']['runs'])
         logs = ', '.join(log_urls) if type(log_urls) is list else None
 
         try:
             for chan in exchange_config['channels']:
-                await self.irc_client.trigger(NOTIFY_SIGNAL_NAME, exch=taskcluster_exchange, logs=logs, task_id=task_id, channel=chan)
+                try:
+                    self.irc_client.trigger(NOTIFY_SIGNAL_NAME, exch=taskcluster_exchange, channel=chan,
+                                                  message=exchange_config['message'], logs=logs, task_id=task_id)
+                except TypeError as te:
+                    log.exception('TypeError: %s', te)
         except KeyError:
             log.debug('No channels specified in exchange config.')
+
         log.info('Notified with IRC for task %s' % task_id)

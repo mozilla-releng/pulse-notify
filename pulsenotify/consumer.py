@@ -9,7 +9,7 @@ from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
 
-EXCHANGES = [
+EXCHANGES = {
     # "exchange/taskcluster-queue/v1/task-defined",
     # "exchange/taskcluster-queue/v1/task-pending",
     # "exchange/taskcluster-queue/v1/task-running",
@@ -17,12 +17,12 @@ EXCHANGES = [
     "exchange/taskcluster-queue/v1/task-completed",
     "exchange/taskcluster-queue/v1/task-failed",
     "exchange/taskcluster-queue/v1/task-exception",
-]
+}
 
-ROUTING_KEYS = [
+ROUTING_KEYS = {
     'route.connor',
     'route.index.releases.v1.#',
-]
+}
 
 
 class NotifyConsumer(object):
@@ -66,12 +66,11 @@ class NotifyConsumer(object):
 
             original_section = full_task['extra']['notifications'][taskcluster_exchange]
 
-            notify_sections = {id_name: {**original_section, **id_config}
-                               for id_name, id_config in self.identities.items()
-                               if id_name in original_section.get('ids', {}) or id_name is 'default'}
-
-            import pprint
-            pprint.pprint(notify_sections)
+            notify_sections = {
+                id_name: {**original_section, **id_config}
+                for id_name, id_config in self.identities.items()
+                if id_name in original_section.get('ids', {}) or id_name is 'default'
+            }
 
             for id_name, id_section in notify_sections.items():
                 try:
@@ -82,12 +81,11 @@ class NotifyConsumer(object):
                                                                      full_task, task_id, taskcluster_exchange, id_section)  # Taskcluster/Notification
                         except KeyError:
                             log.exception("%s produced a KeyError for task %s and id %s", plugin_name, task_id, id_name)
-                except (KeyError, TypeError,) as e:
+                except KeyError as e:
                     log.debug('Plugins section missing from %s notification section', id_name)
                     log.exception('Error type: %s', type(e))
         except KeyError as ke:
-            #  TODO: clarify
-            log.debug('%s raised trying to notify for task %s.', ke, task_id)
+            log.debug('KeyError raised trying to notify for task %s with bad key %s', task_id, ke)
         except TypeError as te:
             log.debug('TypeError %s', te)
             log.debug('%s has \'no notifications\' in notifications section.', task_id)

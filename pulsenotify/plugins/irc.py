@@ -84,7 +84,7 @@ class Plugin(BasePlugin):
         log.info('{} plugin initialized.'.format(self.name))
 
     async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
-        log_urls = self.get_logs_urls(task_id, body['status']['runs'])
+        log_urls = self.get_logs_urls(task, task_id, body['status']['runs'])
         logs = ', '.join(log_urls) if type(log_urls) is list else None
 
         try:
@@ -97,4 +97,4 @@ class Plugin(BasePlugin):
         except KeyError:
             log.debug('No channels specified in exchange config.')
 
-        log.info('Notified with IRC for task %s' % task_id)
+        log.info('Notified with IRC for task %s status %s', task_id, taskcluster_exchange)

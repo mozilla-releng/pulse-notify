@@ -9,6 +9,10 @@ log = logging.getLogger(__name__)
 class BasePlugin(object):
 
     S3_KEY_TEMPLATE = '{}_run{}_log'
+    LOG_TEMPLATES = {
+        'buildbot-bridge': 'https://queue.taskcluster.net/v1/task/{task_id}/runs/{run_id}/artifacts/public/properties.json',
+        'aws-provisioner-v1': 'https://queue.taskcluster.net/v1/task/{task_id}/runs/{run_id}/artifacts/public/logs/live.log',
+    }
 
     def __init__(self):
         log.info('%s plugin initialized', self.name)
@@ -29,8 +33,8 @@ class BasePlugin(object):
             subject = config_section['subject']
         return subject, message
 
-    def get_logs_urls(self, task_id, runs):
-        if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
+    def get_logs_urls(self, task, task_id, runs):
+        if 'log_collect' in os.environ['PN_SERVICES'].split(':') and task['provisionerId'] in self.LOG_TEMPLATES:
             return ['https://{}.s3.amazonaws.com/{}'.format(os.environ['S3_BUCKET'], self.S3_KEY_TEMPLATE.format(task_id, run['runId'])) for run in runs]
         else:
             return None

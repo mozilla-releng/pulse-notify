@@ -26,8 +26,9 @@ class Plugin(AWSPlugin):
         """Perform the notification (ie email relevant addresses)"""
         subject, message = self.task_info(body, task, taskcluster_exchange)
 
-        if 'log_collect' in os.environ['PN_SERVICES'].split(':'):
-            message += "\nThere should be some logs at \n{}".format('\n'.join(self.get_logs_urls(task_id, body['status']['runs'])))
+        logs = self.get_logs_urls(task, task_id, body['status']['runs'])
+        if logs is not None:
+            message += "\nThere should be some logs at \n{}".format('\n'.join(logs))
 
         for attempt in range(5):
             try:

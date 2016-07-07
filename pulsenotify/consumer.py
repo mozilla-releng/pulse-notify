@@ -83,7 +83,6 @@ class NotifyConsumer(object):
                             log.exception("%s produced a KeyError for task %s and id %s", plugin_name, task_id, id_name)
                 except KeyError as e:
                     log.debug('Plugins section missing from %s notification section', id_name)
-                    log.exception('Error type: %s', type(e))
         except KeyError as ke:
             log.debug('KeyError raised trying to notify for task %s with bad key %s', task_id, ke)
         except TypeError as te:

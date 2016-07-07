@@ -53,7 +53,7 @@ class Plugin(BasePlugin):
                                                   date=datetime.datetime.now().strftime('%b %d, %Y'),
                                                   subject=subject,
                                                   body=message,
-                                                  logs=self.get_logs_urls(task_id, body['status']['runs']))
+                                                  logs=self.get_logs_urls(task, task_id, body['status']['runs']))
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
             email_message.attach(MIMEText(message, 'text'))

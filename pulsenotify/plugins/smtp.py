@@ -7,7 +7,7 @@ from . import BasePlugin
 from smtplib import SMTPConnectError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from jinja2 import PackageLoader, Environment
+from jinja2 import PackageLoader, Environment, TemplateNotFound
 from pulsenotify.util import async_time_me
 
 
@@ -37,7 +37,12 @@ class Plugin(BasePlugin):
         self.passwd = os.environ['SMTP_PASSWD']
         self.host = os.environ['SMTP_HOST']
         self.port = os.environ['SMTP_PORT']
-        self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
+        try:
+            self.template = env.get_template('email_template.html')
+            log.debug('email_template.html loaded into SES')
+        except TemplateNotFound:
+            log.exception('Couldn\'t find email_template.html. Defaulting to text email message.')
+            self.template = None
         log.info('%s plugin initialized', self.name)
 
     @async_time_me

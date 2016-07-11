@@ -4,11 +4,11 @@ relman:
   channels:
     - "#sheehan_testchan_2"
 
-releng:
+releasetasks:
   plugins:
     - irc
-    - ses
     - log_collect
+    - ses
   emails:
     - csheehan@mozilla.com
   channels:

@@ -22,16 +22,7 @@ class BasePlugin(object):
         return self.__module__.split('.')[-1]
 
     def task_info(self, config_section):
-        try:  # Try to get plugin-specific message, use default if none available
-            message = config_section['plugins'][self.name]['message']
-        except (KeyError, TypeError,):
-            message = config_section['message']
-
-        try:  # Try to get plugin-specific subject, use default if none available
-            subject = config_section['plugins'][self.name]['subject']
-        except (KeyError, TypeError,):
-            subject = config_section['subject']
-        return subject, message
+        return config_section['subject'], config_section['message']
 
     def get_logs_urls(self, task, task_id, runs):
         if 'log_collect' in os.environ['PN_SERVICES'].split(':') and task['provisionerId'] in self.LOG_TEMPLATES:

@@ -25,8 +25,10 @@ Under each task status, the following fields can be defined:
 - plugins: notification routes for this task status
 - subject: notification subject
 - message: notification message
-- emails: emails to be notified for (ses and smtp plugins only)
-- nicks: IRC nicknames to notify (irc plugin only)
+- emails: emails to be notified (for ses and smtp plugins only)
+- nicks: IRC nicknames to notify (for irc plugin only)
+- channels: IRC channels to send a notification to (for irc plugin only)
+- ids: notify a 'name' based on a configuration in the service
 
 The fields subject and message are not required, a simple fallback message is enabled. Emails and nicks are also not necessary, the service will still try to notify regardless. Below is an example task definition:
 
@@ -46,7 +48,7 @@ The fields subject and message are not required, a simple fallback message is en
             "message": "The task failed! Uh-oh...",
             "plugins": [
               "irc",
-              "ses",
+              "smtp",
             ],
             "nicks": [
               "sheehan",
@@ -54,9 +56,76 @@ The fields subject and message are not required, a simple fallback message is en
             ],
             "emails": [
               "csheehan@mozilla.com",
+            ],
+            "ids": [
+                "id1",
+                "id2",
             ]
           }
         }
+      }
+
+### IDs
+
+To provide simpler defaults for notifications, 'ids' can be configured within the service. These ids provide default settings for the section in which they are specified. The service loads the ids from a YAML file on startup. If a valid id is present in a notification section (ie task-completed), the application will overwrite the section with the defaults specified in the service. For example if the definition for two ids is,
+
+    id1:
+        plugins:
+            - irc
+            - ses
+        channels:
+            - "#chan1"
+        emails:
+            - example@mozilla.com
+    id2:
+        plugins:
+            - log_collect
+            
+and the task definition above comes through the application on the "task-failed" exchange, the application will notify twice based on these configurations:
+
+    "task-failed": {
+        "message": "The task failed! Uh-oh...",
+        "plugins": [
+          "irc",
+          "ses",
+        ],
+        "nicks": [
+          "sheehan",
+          "rail",
+        ],
+        "emails": [
+          "example@mozilla.com",
+        ],
+        "channels": [
+          "#chan1"
+        ],
+        "ids": [
+            "id1",
+            "id2",
+        ]
+      }
+
+and
+
+    "task-failed": {
+        "message": "The task failed! Uh-oh...",
+        "plugins": [
+          "log_collect",
+        ],
+        "nicks": [
+          "sheehan",
+          "rail",
+        ],
+        "emails": [
+          "example@mozilla.com",
+        ],
+        "channels": [
+          "#chan1"
+        ],
+        "ids": [
+            "id1",
+            "id2",
+        ]
       }
 
 ### Plugins
@@ -86,11 +155,9 @@ To add the plugin to the application, put the class in it's own file and add the
 - sns
     Send a notification to an Amazon SNS topic.
 - log_collect
-    Collect log artifacts from the task and upload to an Amazon S3 bucket.
+    Collect log artifacts from the task and upload to an Amazon S3 bucket (supports aws-provisioner-v1 and buildbot-bridge ProvisionerId's)
 - irc
     Push colour-coded messages to internet relay chat.
-- repulse
-    Publish an AMQP message to Pulse.
 
 ## Deployment
 
@@ -134,14 +201,14 @@ The system is configured using a set of environment variables, detailed below:
 - SNS_ARN
     Amazon Resource Number of SNS topic for sns plugin.
 
-- SMTP_EMAIL, SMTP_PASSWD, SMTP_HOST, SMTP_PORT, SMTP_TEMPLATE
+- SMTP_EMAIL, SMTP_PASSWD, SMTP_HOST, SMTP_PORT
     SMTP configuration for smtp plugin.
 
 - S3_BUCKET
     Amazon S3 bucket name for logs.
 
 - SES_EMAIL
-    Confirmed email for SES (testing only).
+    Sender email for SES plugin.
 
 - IRC_HOST, IRC_NAME, IRC_PORT, IRC_NICK, IRC_CHAN, IRC_PASS
     IRC configuration for irc plugin.

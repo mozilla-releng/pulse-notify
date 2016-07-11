@@ -8,7 +8,7 @@ from . import AWSPlugin
 from pulsenotify.util import async_time_me
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from jinja2 import PackageLoader, Environment
+from jinja2 import PackageLoader, Environment, TemplateNotFound
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,14 @@ class Plugin(AWSPlugin):
     def __init__(self):
         super().__init__()
         self.from_email = os.environ['SES_EMAIL']
-        self.template = env.get_template('email_template.html') if bool(os.environ['SMTP_TEMPLATE']) == True else None
+        try:
+            self.template = env.get_template('email_template.html')
+            log.debug('email_template.html loaded into SES')
+        except TemplateNotFound:
+            log.exception('Couldn\'t find email_template.html. Defaulting to text email message.')
+            self.template = None
+
+        log.info('{} plugin initialized.'.format(self.name))
 
     @async_time_me
     async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):

@@ -39,21 +39,21 @@ class Plugin(AWSPlugin):
                 run_id = run['runId']
                 log_url = self.LOG_TEMPLATES[provisioner_id].format(task_id=task_id, run_id=run_id)
                 s3_key = self.S3_KEY_TEMPLATE.format(task_id, run_id)
-                artifact = await get_log(log_url, provisioner_id)
+                task_log = await get_log(log_url, provisioner_id)
 
-                if artifact is None:
+                if task_log is None:
                     log.debug('Artifact is none.')
                     continue
                 else:
                     log.debug('Compressing artifact.')
                     try:
-                        if type(artifact) is str:
+                        if type(task_log) is str:
                             log.debug('artifact is str, converting')
-                            artifact = bytes(artifact, 'utf-8')
+                            task_log = bytes(task_log, 'utf-8')
                         else:
                             log.debug('artifact was bytes')
 
-                        artifact_gzip = gzip.compress(artifact)
+                        artifact_gzip = gzip.compress(task_log)
                     except TypeError as te:
                         log.exception('TypeError: %s', te)
 
@@ -74,9 +74,7 @@ async def get_log(url, provisioner_id):
                     log.debug('bbb actual log filename: %s', json_resp['log_url'][0])
                     async with session.get(json_resp['log_url'][0]) as bbb_response:
                         log.debug('bbb second response header is: %s', bbb_response.headers.get('content-encoding', 'none'))
-                        return await bbb_response.content.text()
-                    log.debug('Something went wrong getting bbb real log')
-                    return None
+                        return await bbb_response.text()
 
                 except JSONDecodeError:
                     log.exception('JSONDecodeError thrown when converting buildbot-bridge properties to json.')
@@ -88,7 +86,7 @@ async def get_log(url, provisioner_id):
 
             elif provisioner_id == 'aws-provisioner-v1':
                 log.debug('aws response header is: %s', response.headers.get('content-encoding', 'none'))
-                return await response.content.text()
+                return await response.text()
 
             else:
                 log.debug('Unknown provisionerId %s given to get_log', provisioner_id)

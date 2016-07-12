@@ -32,26 +32,27 @@ class Plugin(AWSPlugin):
         provisioner_id = task['provisionerId']
         if provisioner_id not in self.LOG_TEMPLATES:
             log.debug('ProvisionerId %s not valid for log upload.', provisioner_id)
-            return  # Exit if the provisionerId doesn't match a known pattern
+            return
 
         for run in body['status']['runs']:
             try:
                 run_id = run['runId']
                 log_url = self.LOG_TEMPLATES[provisioner_id].format(task_id=task_id, run_id=run_id)
-                s3_key = self.S3_KEY_TEMPLATE.format(task_id, run_id)
+                s3_key = self.make_s3_key(task, task_id, run_id)
                 task_log = await get_log(log_url, provisioner_id)
 
-                if task_log is None:
-                    log.debug('Artifact is none.')
+                if task_log is None or s3_key is None:
+                    log.debug('Artifact or s3_key is none.')
                     continue
+
                 else:
                     log.debug('Compressing artifact.')
                     try:
                         if type(task_log) is str:
-                            log.debug('artifact is str, converting')
+                            log.debug('Artifact with key %s is str, converting', s3_key)
                             task_log = bytes(task_log, 'utf-8')
                         else:
-                            log.debug('artifact was bytes')
+                            log.debug('Artifact with key %s was bytes', s3_key)
 
                         artifact_gzip = gzip.compress(task_log)
                     except TypeError as te:

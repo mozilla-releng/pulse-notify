@@ -21,7 +21,6 @@ IRC_HOST=irc.mozilla.org
 IRC_NAME="myrealname"
 IRC_PORT=6697
 IRC_NICK=nickname
-IRC_CHAN=chan
 IRC_PASS=irc_pass
 FLUX_RECORD=0
 #							#

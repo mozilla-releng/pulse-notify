@@ -12,8 +12,7 @@ releasetasks:
   emails:
     - csheehan@mozilla.com
   channels:
-    - "#sheehan_testchan_1"
-    - "#sheehan_testchan_2"
+    - "#release-notifications"
 
 releng-important:
   emails:

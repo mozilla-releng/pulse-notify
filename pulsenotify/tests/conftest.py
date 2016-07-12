@@ -1,7 +1,7 @@
 import uvloop
 import pytest
 
-@pytest.fixture()
+@pytest.fixture()  # TODO: write tests for notify functions
 def fake_notifying_objects():
     """
         Supplies objects to be passed into

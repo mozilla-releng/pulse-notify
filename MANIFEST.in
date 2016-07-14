@@ -1,5 +1,5 @@
 include LICENSE
-include requirements*
+include requirements.txt
 recursive-include *.md
 recursive-include pulsenotify/templates *
 recursive-include pulsenotify/tests *

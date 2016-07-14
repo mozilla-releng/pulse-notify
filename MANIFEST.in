@@ -3,6 +3,7 @@ include requirements*
 recursive-include *.md
 recursive-include pulsenotify/templates *
 recursive-include pulsenotify/tests *
+recursive-include pulsenotify/id_configs *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 

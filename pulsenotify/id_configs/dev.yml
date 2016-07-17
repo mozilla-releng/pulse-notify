@@ -8,31 +8,12 @@ releasetasks:
   plugins:
     - irc
     - log_collect
-    - ses
   emails:
-    - csheehan@mozilla.com
+    - release-automation-notification-dev@mozilla.com
   channels:
     - "#release-notifications"
 
 releng-important:
-  emails:
-    - csheehan@mozilla.com
-  channels:
-    - "#sheehan_testchan_2"
-
-connor:
-  plugins:
-    - irc
-    - log_collect
-    - ses
-  emails:
-    - csheehan@mozilla.com
-  channels:
-    - "#sheehan_testchan_1"
-
-connor2:
-  plugins:
-    - irc
   emails:
     - csheehan@mozilla.com
   channels:

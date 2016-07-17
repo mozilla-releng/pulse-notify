@@ -27,10 +27,13 @@ ROUTING_KEYS = {
 
 class NotifyConsumer(object):
 
-    def __init__(self):
+    def __init__(self, env):
+        #  Initializing the consumer means creating the mapping for the notification plugins.
+        #  The list of plugins to use is pulled from the environment config (colon separated).
+        #  The Plugin objects are constructed by importing the name from the plugins module and adding to
+        #  the notifiers mapping.
         services_list = os.environ['PN_SERVICES'].split(':')
 
-        #  notifiers contains objects representing a plugin's method of notification
         self.notifiers = {}
         for service in services_list:
             try:
@@ -38,9 +41,16 @@ class NotifyConsumer(object):
             except ImportError:
                 log.exception('No plugin named %s, initialization failed', service)
 
-        #  identities contains the unique identities that can be specified for notification
-        self.identities = safe_load(open(os.path.curdir + '/pulsenotify/id_configs/dev_ids.yml', 'r'))
-        self.identities = {**{'default': {}}, **self.identities}  # this line allows for notification without id, straight from task
+        #  Identities contain information about how to notify a single group/person/'identity'.
+        #  The identities are pulled in from a yaml file. If an identity is present in the 'ids' section of a
+        #  notification configuration, the information for that id will add and overwrite the initial configuration.
+        self.identities = safe_load(open(os.path.curdir + '/pulsenotify/id_configs/' + env + '.yml', 'r'))
+
+        #  If a user does not want to notify based on ids and instead wants to specify the notification details fully
+        #  within the task, they should be able to do so. This is accomplished by adding a 'default' identity with no
+        #  information to the list. When the notification configurations are created, the default configuration will
+        #  always be added to the list with no overwriting.
+        self.identities = {**{'default': {}}, **self.identities}
 
         log.debug('IDs: %s', ', '.join(self.identities.keys()))
 
@@ -62,15 +72,20 @@ class NotifyConsumer(object):
             body = json.loads(body.decode("utf-8"))
 
             task_id = body["status"]["taskId"]
-            full_task = await fetch_task(task_id)
 
-            original_section = full_task['extra']['notifications'][taskcluster_exchange]
+            #  Fetch task, retrying a few times in case of a timeout
+            for attempt in range(1, 6):
+                full_task = await fetch_task(task_id)
+                if full_task:
+                    break
+                else:
+                    log.debug('Task definition fetch attempt %s failed, retrying...', attempt)
+            else:
+                log.warn('Task definition fetch failed for task %s', task_id)
 
-            notify_sections = {
-                id_name: {**original_section, **id_config}
-                for id_name, id_config in self.identities.items()
-                if id_name in original_section.get('ids', {}) or id_name is 'default'
-            }
+            original_configuration = full_task['extra']['notifications'][taskcluster_exchange]
+
+            notify_sections = self.generate_notification_configurations(original_configuration)
 
             for id_name, id_section in notify_sections.items():
                 try:
@@ -80,9 +95,9 @@ class NotifyConsumer(object):
                             await self.notifiers[plugin_name].notify(body, envelope, properties,  # AMQP Info
                                                                      full_task, task_id, taskcluster_exchange, id_section)  # Taskcluster/Notification
                         except KeyError:
-                            log.exception("%s produced a KeyError for task %s and id %s", plugin_name, task_id, id_name)
+                            log.exception("Plugin lookup failed for %s, task %s and id %s", plugin_name, task_id, id_name)
                 except KeyError as e:
-                    log.debug('Plugins section missing from %s notification section', id_name)
+                    log.debug('Plugins section missing from %s notification configuration', id_name)
         except KeyError as ke:
             log.debug('KeyError raised trying to notify for task %s with bad key %s', task_id, ke)
         except TypeError as te:
@@ -91,3 +106,17 @@ class NotifyConsumer(object):
         finally:
             log.info('Acknowledging consumption of task %s', task_id)
             return await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
+
+    def generate_notification_configurations(self, original_configuration):
+        #  This function creates the mapping of identities to the corresponding notification configurations for a
+        #  task, where key is the id name and value is the configuration. original_configuration is the configuration
+        #  for the task status the service is notifying for, pulled directly from the task definition. For each id
+        #  present in both the original configuration and the service's list of ids, we create a notification
+        #  configuration and add it to the mapping. We also always add the 'default' id to the mapping in case the user
+        #  has already configured notifications in the task without ids.
+        ids_in_original_config = original_configuration.get('ids', {})
+        return {
+                id_name: {**original_configuration, **id_config}
+                for id_name, id_config in self.identities.items()
+                if id_name in ids_in_original_config or id_name is 'default'
+        }

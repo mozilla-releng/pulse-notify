@@ -30,9 +30,12 @@ class BasePlugin(object):
             task_metadata = task['metadata']
             platform = build_properties.get('platform', 'all')
 
+            if not platform:
+                platform = 'all'
+
             name = task_metadata['name'].replace('/', '_').replace('\\', '_')
 
-            key = self.S3_KEY_TEMPLATE.format(branch=build_properties['branch'],
+            s3_key = self.S3_KEY_TEMPLATE.format(branch=build_properties['branch'],
                                               product=build_properties['product'],
                                               version=build_properties['version'],
                                               build_number=build_properties['build_number'],
@@ -40,7 +43,10 @@ class BasePlugin(object):
                                               platform=platform,
                                               task_id=task_id,
                                               run_id=run_id)
-            return key
+
+            s3_key = s3_key.replace(' ', '_')
+
+            return s3_key
 
         except KeyError:
             log.exception('Could not create s3 key for task %s, logs not uploaded', task_id)

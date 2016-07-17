@@ -3,7 +3,6 @@ import logging
 from . import BasePlugin
 
 from bottom import Client
-from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +40,6 @@ class Plugin(BasePlugin):
         - IRC_NAME
         - IRC_NICK
         - IRC_PORT
-        - IRC_CHAN
         - IRC_PASS
 
     In each task, under extra/notification/<desired exchange>/plugins/, there must be an object with the following schema:

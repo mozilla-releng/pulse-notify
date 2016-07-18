@@ -191,6 +191,9 @@ The system is configured using a set of environment variables, detailed below:
 
 - PN_SERVICES
     Colon-separated list of enabled plugins.
+    
+- ID_ENV
+    Specifies whether to pull dev or prod id configs
 
 - PULSE_HOST, PULSE_LOGIN, PULSE_PASSWORD, PULSE_SSL, PULSE_PORT, PULSE_QUEUE
     Login information for Mozilla Pulse.
@@ -213,8 +216,8 @@ The system is configured using a set of environment variables, detailed below:
 - IRC_HOST, IRC_NAME, IRC_PORT, IRC_NICK, IRC_CHAN, IRC_PASS
     IRC configuration for irc plugin.
 
-- FLUX_RECORD
-    Boolean switch for logging of InfluxDB time-series data (ie performance metrics)
+- INFLUXDB_NAME, INFLUXDB_HOST, INFFLUXDB_RECORD
+    Host, db name and on/off switch for InfluxDB time series data
 
 ## Tests
 Tests can be run with 

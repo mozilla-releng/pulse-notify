@@ -7,7 +7,7 @@ from functools import wraps
 
 log = logging.getLogger(__name__)
 
-db_cnxn = influxdb.InfluxDBClient(database='time_notifications')
+db_cnxn = influxdb.InfluxDBClient(database=os.environ.get('INFLUXDB_NAME', 'time_notifications'))
 
 
 async def fetch_task(task_id):
@@ -24,12 +24,14 @@ def async_time_me(f):
         t_i = time()
         result = await f(*args, **kw)
         t_f = time()
+
         log.debug('notify coroutine for %r took %2.4f sec', f.__module__.split('.')[-1], t_f - t_i)
-        if bool(int(os.environ['FLUX_RECORD'])):
+
+        if bool(int(os.environ['INFLUXDB_RECORD'])):
             db_cnxn.write_points([{
                 "measurement": "notify_timing",
                 "tags": {
-                    "host": "local",
+                    "host": os.environ.get('INFLUXDB_HOST', 'local'),
                     "service": f.__module__.split('.')[-1]
                 },
                 "fields": {

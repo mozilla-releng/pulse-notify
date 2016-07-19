@@ -10,7 +10,7 @@ setup(
     name='pulse-notify',
     version='0.2',
     packages=find_packages(),
-    url='http://github.com/cgsheeh/pulse-notify',
+    url='https://github.com/cgsheeh/pulse-notify',
     license='',
     author='Connor Sheehan',
     author_email='csheehan@mozilla.com',

@@ -25,7 +25,7 @@ ROUTING_KEYS = {
 }
 
 
-class NotificationsNotConfiguredError(Exception):
+class NoNotificationConfigurationError(Exception):
     pass
 
 
@@ -33,7 +33,7 @@ class StatusNotificationsNotConfiguredError(Exception):
     pass
 
 
-class NoNotificationsSpecifiedError(Exception):
+class InvalidStatusConfigurationError(Exception):
     pass
 
 
@@ -50,6 +50,8 @@ class NotifyConsumer(object):
         for service in services_list:
             try:
                 self.notifiers[service] = import_module('pulsenotify.plugins.' + service).Plugin()
+                assert hasattr(self.notifiers[service], 'notify')
+
             except ImportError:
                 log.exception('No plugin named %s, initialization failed', service)
 
@@ -85,7 +87,6 @@ class NotifyConsumer(object):
 
             log.info('Processing notifications for task %s, status %s', task_id, task_status)
 
-
             #  Fetch task, retrying a few times in case of a timeout
             for attempt in range(1, 6):
                 full_task = await fetch_task(task_id)
@@ -114,10 +115,10 @@ class NotifyConsumer(object):
                     else:
                         log.warn('No plugin object %s for task %s found in consumer.notifiers', plugin_name, task_id)
 
-        except NotificationsNotConfiguredError:
+        except NoNotificationConfigurationError:
             log.exception('Task %s has no notifications section.', task_id)
 
-        except NoNotificationsSpecifiedError:
+        except InvalidStatusConfigurationError:
             log.exception('Task %s has a notifications section, but no notification configurations', task_id)
 
         except StatusNotificationsNotConfiguredError:
@@ -134,16 +135,20 @@ class NotifyConsumer(object):
         #  Retrieve the notifications section out of the task
         try:
             notification_section = full_task['extra']['notifications']
-        except KeyError:
-            raise NotificationsNotConfiguredError()
+        except KeyError as ke:
+            raise NoNotificationConfigurationError() from ke
 
         #  Retrieve the notification configuration for this task status
         try:
             original_configuration = notification_section[task_status]
-        except KeyError:
-            raise StatusNotificationsNotConfiguredError()
-        except TypeError:
-            raise NoNotificationsSpecifiedError()
+
+            if not isinstance(original_configuration, dict):
+                raise InvalidStatusConfigurationError()
+
+        except KeyError as ke:
+            raise StatusNotificationsNotConfiguredError() from ke
+        except TypeError as te:
+            raise NoNotificationConfigurationError() from te
 
         #  This section creates the mapping of identities to the corresponding notification configurations for a
         #  task, where key is the id name and value is the configuration. original_configuration is the configuration

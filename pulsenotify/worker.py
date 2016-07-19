@@ -11,7 +11,7 @@ async def worker(consumer):
             login=os.environ['PULSE_LOGIN'],
             password=os.environ['PULSE_PASSWORD'],
             ssl=os.environ['PULSE_SSL'],
-            port=os.environ['PULSE_PORT']
+            port=os.environ['PULSE_PORT'],
         )
     except aioamqp.AmqpClosedConnection as acc:
         log.exception('AMQP Connection closed: %s', acc)

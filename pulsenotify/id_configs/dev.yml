@@ -8,6 +8,7 @@ releasetasks:
   plugins:
     - irc
     - log_collect
+    - ses
   emails:
     - release-automation-notification-dev@mozilla.com
   channels:

@@ -18,3 +18,6 @@ class TestConsumer:
             assert service in consumer.notifiers
         assert hasattr(consumer, 'routing_keys')
         assert hasattr(consumer, 'exchanges')
+
+    def test_generate_notification_configuration(self):
+        pass

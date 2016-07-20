@@ -10,7 +10,7 @@ releasetasks:
     - log_collect
     - ses
   emails:
-    - release-automation-notification-dev@mozilla.com
+    - release-automation-notifications-dev@mozilla.com
   channels:
     - "#release-notifications"
 

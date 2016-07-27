@@ -25,7 +25,6 @@ class Plugin(BasePlugin):
         - SMTP_PASSWD (of email)
         - SMTP_HOST (SMTP host domain)
         - SMTP_PORT (port of host)
-        - SMTP_TEMPLATE (True/False indicator to use template)
     """
     def __init__(self):
         self.email = os.environ['SMTP_EMAIL']
@@ -35,6 +34,7 @@ class Plugin(BasePlugin):
         try:
             self.template = env.get_template('email_template.html')
             log.debug('email_template.html loaded into SES')
+
         except TemplateNotFound:
             log.exception('Couldn\'t find email_template.html. Defaulting to text email message.')
             self.template = None

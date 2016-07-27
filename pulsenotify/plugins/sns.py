@@ -22,13 +22,12 @@ class Plugin(AWSPlugin):
         self.arn = os.environ['SNS_ARN']
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
+    async def notify(self, task_data, exchange_config):
         """Perform the notification (ie email relevant addresses)"""
-        subject, message = self.task_info(body, task, taskcluster_exchange)
-
-        logs = self.get_logs_urls(task, task_id, body['status']['runs'], taskcluster_exchange)
-        if logs is not None:
-            message += "\nThere should be some logs at \n{}".format('\n'.join(logs))
+        message = exchange_config['message']
+        if task_data.logs() is not None:
+            joined_logs = '\n'.join((l['destination_url'] for l in task_data.log_data()))
+            message += "\nThere should be some logs at \n{}".format(joined_logs)
 
         for attempt in range(5):
             try:
@@ -38,10 +37,10 @@ class Plugin(AWSPlugin):
                                      region_name='us-west-2')
                 topic = sns.Topic(self.arn)
 
-                topic.publish(Subject=subject, Message=message)
-                log.info('Notified with SNS for task %s' % task_id)
+                topic.publish(Subject=exchange_config['subject'], Message=message)
+                log.info('Notified with SNS for %r', task_data)
                 return
             except Boto3Error as b3e:
                 log.exception('Attempt %s: Boto3Error %s', str(attempt), b3e.message)
         else:
-            log.exception('Could not notify %s via SNS for task %s', self.arn, task_id)
+            log.exception('Could not notify %s via SNS for %r', self.arn, task_data)

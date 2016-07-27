@@ -41,23 +41,21 @@ class Plugin(BasePlugin):
         log.info('%s plugin initialized', self.name)
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
-        subject, message = self.task_info(exchange_config)
-
+    async def notify(self, task_data, exchange_config):
         email_message = MIMEMultipart()
-        email_message['Subject'] = subject
+        email_message['Subject'] = exchange_config['subject']
         email_message['To'] = ', '.join(exchange_config['emails'])
 
         if self.template:
+            log_destinations = (l['destination_url'] for l in task_data.log_data())
             rendered_email = self.template.render(exchange_config,
                                                   date=datetime.datetime.now().strftime('%b %d, %Y'),
-                                                  subject=subject,
-                                                  body=message,
-                                                  logs=self.get_logs_urls(task, task_id, body['status']['runs'],
-                                                                          taskcluster_exchange))
+                                                  subject=exchange_config['subject'],
+                                                  body=exchange_config['message'],
+                                                  logs=log_destinations)
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
-            email_message.attach(MIMEText(message, 'text'))
+            email_message.attach(MIMEText(exchange_config['message'], 'text'))
 
         for attempt in range(5):
             try:
@@ -67,9 +65,9 @@ class Plugin(BasePlugin):
                 s.login(self.email, self.passwd)
                 s.sendmail(self.email, exchange_config['emails'], email_message.as_string())
                 s.quit()
-                log.info("Notified on smtp for task %s" % task_id)
+                log.info("Notified on smtp for %r", task_data)
                 return
             except SMTPConnectError as ce:
                 log.exception('Attempt %s: SMTPConnectError %s', str(attempt), ce.message)
         else:
-            log.exception('Could not connect to %s with login %s:%s for task %s', self.host, self.email, task_id)
+            log.exception('Could not connect to %s with login %s:%s for task %r', self.host, self.email, task_data)

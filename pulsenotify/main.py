@@ -6,15 +6,10 @@ from pulsenotify.worker import worker
 
 
 log = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, format='%(asctime)s [%(levelname)s] %(message)s')
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s [%(levelname)s] %(message)s', level=logging.NOTSET)
 
 
 def cli():
-    root_logger = logging.getLogger()
-    clihandler = logging.StreamHandler(sys.stdout)
-    root_logger.setLevel(logging.NOTSET)
-    root_logger.addHandler(clihandler)
-
     try:
         event_loop.run_until_complete(worker(NotifyConsumer()))
         event_loop.run_forever()

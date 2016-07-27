@@ -6,7 +6,7 @@ from pulsenotify.worker import worker
 
 
 log = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, format='%(asctime)s [%(levelname)-10s] %(message)s')
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s [%(levelname)s] %(message)s')
 
 
 def cli():

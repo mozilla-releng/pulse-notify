@@ -41,15 +41,14 @@ class Plugin(BasePlugin):
         - IRC_NICK
         - IRC_PORT
         - IRC_PASS
-
-    In each task, under extra/notification/<desired exchange>/plugins/, there must be an object with the following schema:
-        - recipients
     """
 
-    def __init__(self):
+    def __init__(self, loop=None):
+        #  Create the client and add all functions with 'on' decorator as event handlers for
+        #  different irc message types
         self.irc_client = Client(host=os.environ['IRC_HOST'],
                                  port=os.environ['IRC_PORT'],
-                                 ssl=True)
+                                 ssl=True, loop=loop)
 
         @self.irc_client.on('CLIENT_CONNECT')
         def connect(**kwargs):
@@ -59,6 +58,7 @@ class Plugin(BasePlugin):
 
         @self.irc_client.on('CLIENT_DISCONNECT')
         async def reconnect(**kwargs):
+            #  If the client disconnects, try and reconnect
             log.debug('Disconnect registered, reconnecting...')
             try:
                 await self.irc_client.connect()
@@ -67,32 +67,38 @@ class Plugin(BasePlugin):
 
         @self.irc_client.on('PING')
         def keep_alive(message, **kwargs):
+            #  Reply to a 'ping' message with a 'pong'
             self.irc_client.send('PONG', message=message)
 
         @self.irc_client.on(NOTIFY_SIGNAL_NAME)
-        async def irc_notify(task_id=None, exch=None, logs=None, channel=None, message=None, **kwargs):
+        async def irc_notify(task_id=None, status=None, logs=None, channel=None, message=None, **kwargs):
+            #  Send a notification message to a channel
             self.irc_client.send('JOIN', channel=channel)
             task_message = '{task_id}: {message}'.format(task_id=task_id, message=message)
+            self.irc_client.send('privmsg', target=channel, message=irc_format(task_message, status))
+
+            #  Send the log links, tabbed out
             if logs is not None:
-                task_message += ' Logs: ({log_sep})'.format(log_sep=logs)
-            self.irc_client.send('privmsg', target=channel, message=irc_format(task_message, exch))
+                for log_link in logs:
+                    self.irc_client.send('privmsg',
+                                         target=channel,
+                                         message=irc_format('\t\t' + log_link['destination_url'], status))
 
         self.irc_client.loop.create_task(self.irc_client.connect())
 
         log.info('{} plugin initialized.'.format(self.name))
 
-    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
-        log_urls = self.get_logs_urls(task, task_id, body['status']['runs'])
-        logs = ', '.join(log_urls) if type(log_urls) is list else None
+    async def notify(self, task_data, status_config):
+        if 'channels' not in status_config:
+            log.debug('No IRC channels specified in task %r notification config.', task_data)
+            return
 
-        try:
-            for chan in exchange_config['channels']:
-                try:
-                    self.irc_client.trigger(NOTIFY_SIGNAL_NAME, exch=taskcluster_exchange, channel=chan,
-                                                  message=exchange_config['message'], logs=logs, task_id=task_id)
-                except TypeError as te:
-                    log.exception('TypeError: %s', te)
-        except KeyError:
-            log.debug('No channels specified in exchange config.')
+        for chan in status_config['channels']:
+            try:
+                self.irc_client.trigger(NOTIFY_SIGNAL_NAME, status=task_data.status, channel=chan,
+                                        message=status_config['message'], logs=task_data.log_data(),
+                                        task_id=task_data.id)
+            except TypeError as te:
+                log.exception('TypeError: %s', te)
 
-        log.info('Notified with IRC for task %s status %s', task_id, taskcluster_exchange)
+        log.info('Notified with IRC for %s', task_data)

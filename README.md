@@ -133,15 +133,15 @@ and
 
 Pulse-Notifier can be extended to add new functionality by adding a plugin. To create a plugin, create a class named Plugin that extends the BasePlugin class. To implement your functionality, create a method with the following signature:
 
-        async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
+        async def notify(self, task_data, exchange_config):
 
-Where body, envelope and properties are objects passed from AMQP, task is a dict representation of the task, task_id is the taskcluster task id, taskcluster_exchange is the name of the exchange the message passed through, and exchange_config is the desired notification configuration. 
+Where task_data is a TaskData object with information about the task and AMQP message, and exchange_config is the desired notification configuration. 
 
 To add the plugin to the application, put the class in it's own file and add the file to the plugins directory.
 
 ##### Base Plugins
 - BasePlugin
-    Defines the 'name' property for the plugin as the filename the plugin is found in. Also defines the task_info and get_log_urls helper functions.
+    Defines the 'name' property for the plugin as the filename the plugin is found in.
 
 - AWSPlugin
     An extension of BasePlugin, with added Amazon Web Services key fields.
@@ -218,6 +218,22 @@ The system is configured using a set of environment variables, detailed below:
 
 - INFLUXDB_NAME, INFLUXDB_HOST, INFFLUXDB_RECORD
     Host, db name and on/off switch for InfluxDB time series data
+
+## Notifying for a new Task Graph
+
+1. Create your task graph.
+2. For each task in the graph, create an extra/notifications section.
+3. For each important task status (ie task-failed, task-completed etc), create a section specifying how to be notified.
+4. Add the important routing keys and AMQP exchanges to the pulsenotify/consumer.py file.
+5. Set up your environment config with all the required variables.
+6. If you used ID's in the tasks, configure them in the id_configs folder.
+7. Start a new instance of the application.
+
+Optionally, you may wish to edit these files:
+
+- pulsenotify/templates/email_template.html (for custom emails)
+- the get_log function, as it currently only supports logs for two TC provisioner types
+
 
 ## Tests
 Tests can be run with 

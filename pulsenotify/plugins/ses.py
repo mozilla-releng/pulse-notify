@@ -23,6 +23,7 @@ class Plugin(AWSPlugin):
         try:
             self.template = env.get_template('email_template.html')
             log.debug('email_template.html loaded into SES')
+
         except TemplateNotFound:
             log.exception('Couldn\'t find email_template.html. Defaulting to text email message.')
             self.template = None
@@ -30,37 +31,37 @@ class Plugin(AWSPlugin):
         log.info('{} plugin initialized.'.format(self.name))
 
     @async_time_me
-    async def notify(self, body, envelope, properties, task, task_id, taskcluster_exchange, exchange_config):
-        subject, message = self.task_info(exchange_config)
-
+    async def notify(self, task_data, status_config):
         email_message = MIMEMultipart()
-        email_message['Subject'] = subject
+        email_message['Subject'] = status_config['subject']
 
         if self.template:
-            rendered_email = self.template.render(subject=subject,
-                                                  body=message,
+            log_destinations = (l['destination_url'] for l in task_data.log_data())
+            rendered_email = self.template.render(subject=status_config['subject'],
+                                                  body=status_config['message'],
                                                   date=datetime.datetime.now().strftime('%b %d, %Y'),
-                                                  logs=self.get_logs_urls(task, task_id, body['status']['runs']))
+                                                  logs=log_destinations,
+                                                  inspector_url=task_data.inspector_url)
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
-            email_message.attach(MIMEText(message, 'text'))
+            email_message.attach(MIMEText(status_config['message'], 'text'))
 
         for attempt in range(5):
             try:
                 ses = boto3.client(self.name,
-                                    aws_access_key_id=self.access_key_id,
-                                    aws_secret_access_key=self.secret_access_key,
-                                    region_name='us-west-2')
+                                   aws_access_key_id=self.access_key_id,
+                                   aws_secret_access_key=self.secret_access_key,
+                                   region_name='us-west-2')
 
                 raw_message = {'Data': email_message.as_string()}
 
                 ses.send_raw_email(RawMessage=raw_message,
                                    Source=self.from_email,
-                                   Destinations=exchange_config['emails'])
+                                   Destinations=status_config['emails'])
 
-                log.info('Notified with SES for task %s' % task_id)
+                log.info('Notified with SES for %r', task_data)
                 return
             except Boto3Error as b3e:
                 log.exception('SES attempt %s: Boto3Error - %s', str(attempt), b3e)
         else:
-            log.exception('Could not notify via SES for task %s', task_id)
+            log.exception('Could not notify via SES for %s', task_data)

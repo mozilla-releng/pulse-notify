@@ -26,16 +26,16 @@ class Plugin(AWSPlugin):
         """Perform the notification (ie email relevant addresses)"""
         subject, message = self.task_info(body, task, taskcluster_exchange)
 
-        logs = self.get_logs_urls(task, task_id, body['status']['runs'])
+        logs = self.get_logs_urls(task, task_id, body['status']['runs'], taskcluster_exchange)
         if logs is not None:
             message += "\nThere should be some logs at \n{}".format('\n'.join(logs))
 
         for attempt in range(5):
             try:
                 sns = boto3.resource(self.name,
-                                      aws_access_key_id=self.access_key_id,
-                                      aws_secret_access_key=self.secret_access_key,
-                                      region_name='us-west-2')
+                                     aws_access_key_id=self.access_key_id,
+                                     aws_secret_access_key=self.secret_access_key,
+                                     region_name='us-west-2')
                 topic = sns.Topic(self.arn)
 
                 topic.publish(Subject=subject, Message=message)

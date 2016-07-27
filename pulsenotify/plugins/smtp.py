@@ -26,11 +26,6 @@ class Plugin(BasePlugin):
         - SMTP_HOST (SMTP host domain)
         - SMTP_PORT (port of host)
         - SMTP_TEMPLATE (True/False indicator to use template)
-
-    In each task, under extra/notification/<desired exchange>, there must be an object with the following schema:
-        - subject (of email)
-        - recipients (who to notify)
-        - body (of email in text format)
     """
     def __init__(self):
         self.email = os.environ['SMTP_EMAIL']
@@ -58,7 +53,8 @@ class Plugin(BasePlugin):
                                                   date=datetime.datetime.now().strftime('%b %d, %Y'),
                                                   subject=subject,
                                                   body=message,
-                                                  logs=self.get_logs_urls(task, task_id, body['status']['runs']))
+                                                  logs=self.get_logs_urls(task, task_id, body['status']['runs'],
+                                                                          taskcluster_exchange))
             email_message.attach(MIMEText(rendered_email, 'html'))
         else:
             email_message.attach(MIMEText(message, 'text'))

@@ -3,12 +3,15 @@ import logging
 import os
 from importlib import import_module
 from yaml import safe_load
-
+from asyncio import sleep
+from json import JSONDecodeError
+import aiohttp
 from pulsenotify.util import fetch_task
 from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
 
+#  Exchanges to consume messages from
 EXCHANGES = {
     # "exchange/taskcluster-queue/v1/task-defined",
     # "exchange/taskcluster-queue/v1/task-pending",
@@ -19,21 +22,30 @@ EXCHANGES = {
     "exchange/taskcluster-queue/v1/task-exception",
 }
 
+#  Keys to bind exchanges to
 ROUTING_KEYS = {
     'route.connor',
     'route.index.releases.v1.#',
 }
 
 
+class TaskFetchFailedError(Exception):
+    """ Exception thrown when task fetch fails """
+    pass
+
+
 class NoNotificationConfigurationError(Exception):
+    """ Exception thrown when no notifications are configured """
     pass
 
 
 class StatusNotificationsNotConfiguredError(Exception):
+    """ Exception thrown when notifications not configured for a specific task status """
     pass
 
 
 class InvalidStatusConfigurationError(Exception):
+    """ Exception thrown when status notifications are incorrectly configured """
     pass
 
 
@@ -58,7 +70,9 @@ class NotifyConsumer(object):
         #  Identities contain information about how to notify a single group/person/'identity'.
         #  The identities are pulled in from a yaml file. If an identity is present in the 'ids' section of a
         #  notification configuration, the information for that id will add and overwrite the initial configuration.
-        self.identities = safe_load(open(os.path.curdir + '/pulsenotify/id_configs/' + os.environ['ID_ENV'] + '.yml', 'r'))
+        id_config_path = '{curdir}/pulsenotify/id_configs/{id_env}.yml'.format(curdir=os.path.curdir,
+                                                                               id_env=os.environ['ID_ENV'])
+        self.identities = safe_load(open(id_config_path, 'r'))
 
         #  If a user does not want to notify based on ids and instead wants to specify the notification details fully
         #  within the task, they should be able to do so. This is accomplished by adding a 'default' identity with no
@@ -67,7 +81,6 @@ class NotifyConsumer(object):
         self.identities = {**{'default': {}}, **self.identities}
 
         log.debug('IDs: %s', ', '.join(self.identities.keys()))
-
         log.info('Consumer initialized.')
 
     @property
@@ -80,73 +93,62 @@ class NotifyConsumer(object):
 
     @async_time_me
     async def dispatch(self, channel, body, envelope, properties):
+        task_data = TaskData(body, envelope, properties)
+
         try:
-            body = json.loads(body.decode("utf-8"))
-            task_id = body["status"]["taskId"]
-            task_status = envelope.exchange_name.split('/')[-1]
+            await task_data.fetch_task_and_analyze()
 
-            log.info('Processing notifications for task %s, status %s', task_id, task_status)
-
-            #  Fetch task, retrying a few times in case of a timeout
-            for attempt in range(1, 6):
-                full_task = await fetch_task(task_id)
-                if full_task:
-                    break
-                else:
-                    log.debug('Task definition fetch attempt %s failed, retrying...', attempt)
-            else:
-                log.warn('Task definition fetch failed for task %s', task_id)
-                return
-
-            notify_sections = self.generate_notification_configurations(full_task, task_status)
+            notify_sections = self.generate_notification_configurations(task_data)
 
             for id_name, id_section in notify_sections.items():
                 if 'plugins' in id_section:
                     enabled_plugins = id_section['plugins']
                 else:
-                    log.debug('No plugins section found for taskId %s with status %s, for id %s',
-                              task_id, task_status, id_name)
+                    log.debug('No plugins section found for %s, id %s', task_data, id_name)
                     continue
 
                 for plugin_name in enabled_plugins:
                     if plugin_name in self.notifiers:
-                        await self.notifiers[plugin_name].notify(body, envelope, properties,  # AMQP Info
-                                                                 full_task, task_id, task_status, id_section)  # Taskcluster/Notification
+                        await self.notifiers[plugin_name].notify(task_data, id_section)
                     else:
-                        log.warn('No plugin object %s for task %s found in consumer.notifiers', plugin_name, task_id)
+                        log.warn('No plugin object %s for %r found in consumer.notifiers', plugin_name, task_data)
 
         except NoNotificationConfigurationError:
-            log.exception('Task %s has no notifications section.', task_id)
+            log.exception('%s has no notifications section.', task_data)
 
         except InvalidStatusConfigurationError:
-            log.exception('Task %s has a notifications section, but no notification configurations', task_id)
+            log.exception('%r has a notifications section, but no notification configurations', task_data)
 
         except StatusNotificationsNotConfiguredError:
-            log.exception('Task %s has no notification configuration for status %s', task_id, task_status)
+            log.exception('%r has no notification configuration.', task_data)
+
+        except TaskFetchFailedError:
+            log.exception('Could not fetch %r', task_data)
 
         except Exception as e:
             log.exception('Exception %s caught by generic exception trap', e)
 
         finally:
-            log.info('Acknowledging consumption of task %s', task_id)
+            log.info('Acknowledging consumption of %r', task_data)
             return await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
 
-    def generate_notification_configurations(self, full_task, task_status):
+    def generate_notification_configurations(self, task_data):
         #  Retrieve the notifications section out of the task
         try:
-            notification_section = full_task['extra']['notifications']
+            notification_section = task_data.definition['extra']['notifications']
         except KeyError as ke:
             raise NoNotificationConfigurationError() from ke
 
         #  Retrieve the notification configuration for this task status
         try:
-            original_configuration = notification_section[task_status]
+            original_configuration = notification_section[task_data.status]
 
             if not isinstance(original_configuration, dict):
                 raise InvalidStatusConfigurationError()
 
         except KeyError as ke:
             raise StatusNotificationsNotConfiguredError() from ke
+
         except TypeError as te:
             raise NoNotificationConfigurationError() from te
 
@@ -162,3 +164,153 @@ class NotifyConsumer(object):
                 for id_name, id_config in self.identities.items()
                 if id_name in ids_in_original_config or id_name is 'default'
         }
+
+
+class TaskData(object):
+
+    S3_DESTINATION = 'https://{bucket}.s3.amazonaws.com/{log_key}'
+    S3_KEY_TEMPLATE = '{branch}/{product}-{version}/build{build_number}/{name}-{platform}-{task_id}-{run_id}'
+    LOG_TEMPLATES = {
+        'buildbot-bridge':
+            'https://queue.taskcluster.net/v1/task/{task_id}/runs/{run_id}/artifacts/public/properties.json',
+
+        'aws-provisioner-v1':
+            'https://queue.taskcluster.net/v1/task/{task_id}/runs/{run_id}/artifacts/public/logs/live.log',
+    }
+
+    def __init__(self, body, envelope, properties):
+        self.body = json.loads(body.decode("utf-8"))
+        self.envelope = envelope
+        self.properties = properties
+        self.id = self.body['status']['taskId']
+        self.status = envelope.exchange_name.split('/')[-1]
+        self.inspector_url = "https://tools.taskcluster.net/task-inspector/#{task_id}".format(task_id=self.id)
+
+        #  These fields are created by the async function fetch_task_and_analyze
+        self.definition = None
+        self.provisioner_id = None
+        self.logs = None
+
+    def __repr__(self):
+        return "Task(id={id}, status={status})".format(id=self.id, status=self.status)
+
+    async def fetch_task_and_analyze(self):
+        #  Fetch task, retrying a few times in case of a timeout
+        #  Once the task is fetched, set as the definition and get the provisionerId
+        for attempt in range(1, 6):
+            full_task = await fetch_task(self.id)
+            if full_task:
+                self.definition = full_task
+                self.provisioner_id = self.definition['provisionerId']
+                break
+            else:
+                log.debug('%r definition fetch attempt %s failed, retrying in 10s...', self, attempt)
+                sleep(10)
+        else:
+            raise TaskFetchFailedError()
+
+        #  No need to create the logs if the provisionerId is not supported
+        if self.provisioner_id not in self.LOG_TEMPLATES:
+            return
+
+        #  Download the logs and store them in this object
+        self.logs = []
+        for run in self.body['status']['runs']:
+            url = self.LOG_TEMPLATES[self.provisioner_id].format(task_id=self.id, run_id=run['runId'])
+            #  Retry log grab in case of network instability
+            for attempt in range(1, 6):
+                task_log = await get_log(url, self.provisioner_id)
+                if task_log:
+                    self.logs.append((run['runId'], task_log,))
+                    break
+                else:
+                    log.debug('Attempt %s in getting %r run %s log failed, retrying in 10s...', attempt, self, run)
+                    sleep(10)
+            else:
+                log.warn('Could not retrieve log for %r run %s.', self, run)
+                continue
+
+    def log_data(self):
+        if not self.logs:
+            return None
+        else:
+            for run_number, data in self.logs:
+                yield {
+                    'data': data,
+                    's3_key': self.make_s3_key(run_number),
+                    'destination_url': self.S3_DESTINATION.format(bucket=os.environ['S3_BUCKET'],
+                                                                  log_key=self.make_s3_key(run_number)),
+                }
+
+    def make_s3_key(self, run_id):
+        build_properties = self.definition['extra']['build_props']
+        task_metadata = self.definition['metadata']
+
+        #  The get call can still return None, which should be all for our purposes
+        platform = build_properties.get('platform', 'all')
+        if not platform:
+            platform = 'all'
+
+        name = task_metadata['name'].replace('/', '_').replace('\\', '_')
+
+        s3_key = self.S3_KEY_TEMPLATE.format(branch=build_properties['branch'],
+                                             product=build_properties['product'],
+                                             version=build_properties['version'],
+                                             build_number=build_properties['build_number'],
+                                             name=name,
+                                             platform=platform,
+                                             task_id=self.id,
+                                             run_id=run_id)
+
+        s3_key = s3_key.replace(' ', '_')
+
+        return s3_key
+
+async def get_log(url, provisioner_id):
+    #  Grabs logs for supported provisionerIds from a given url
+    if provisioner_id == 'buildbot-bridge':
+        return await get_bbb_log(url)
+
+    elif provisioner_id == 'aws-provisioner-v1':
+        return await get_aws_log(url)
+
+    else:
+        log.debug('Unknown provisionerId %s given to get_log', provisioner_id)
+        return None
+
+async def get_aws_log(url):
+    #  Grabs log files for aws-provisioner tasks
+    with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            log.debug('aws response header is: %s', response.headers.get('content-encoding', 'none'))
+            return await response.text()
+
+async def get_bbb_log(url):
+    #  Grabs log files for buildbot-bridge provisioner tasks
+    with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            log.debug('bbb response header is: %s', response.headers.get('content-encoding', 'none'))
+            try:
+                json_resp = await response.json()
+                log.debug('bbb actual log filename: %s', json_resp['log_url'][0])
+                async with session.get(json_resp['log_url'][0]) as bbb_response:
+                    log.debug('bbb second response header is: %s',
+                              bbb_response.headers.get('content-encoding', 'none'))
+
+                    try:
+                        test_for_bad_log = await bbb_response.json()
+                        if test_for_bad_log['message'] is 'Artifact not found':
+                            log.debug('Artifact not found at %s', url)
+                            return None
+                    except JSONDecodeError:
+                        pass
+
+                    return await bbb_response.text()
+
+            except JSONDecodeError:
+                log.exception('JSONDecodeError thrown when converting buildbot-bridge properties to json.')
+                return None
+
+            except KeyError:
+                log.exception('No key \'log_url\' in json response for buildbot-bridge')
+                return None

@@ -3,11 +3,11 @@ import pytest
 
 class TestIRC:
 
-    @pytest.fixture(scope='class')
-    def plugin(self):
+    @pytest.fixture()
+    def plugin(self, event_loop):
         from pulsenotify.plugins.irc import Plugin
-        return Plugin()
+        return Plugin(loop=event_loop)
 
     @pytest.mark.asyncio
-    async def test_notify(self, plugin, fake_notifying_objects):
-        assert type(fake_notifying_objects['task']) is dict
+    async def test_constructor(self, plugin):
+        assert hasattr(plugin, 'notify')

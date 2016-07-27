@@ -2,9 +2,11 @@ from setuptools import setup, find_packages
 
 with open('requirements.txt', 'r') as reqs_txt:
     reqs = reqs_txt.readlines()
-
-with open('README.md', 'r') as readme_txt:
-    readme = readme_txt.read()
+try:
+    with open('README.md', 'r') as readme_txt:
+        readme = readme_txt.read()
+except FileNotFoundError:
+    readme = 'No README.md found.'
 
 setup(
     name='pulse-notify',

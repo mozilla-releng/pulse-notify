@@ -1,8 +1,13 @@
 sudo: false
 language: python
 python:
-  - "3.5"
+- '3.5'
 install:
-    - travis_retry pip install tox
+- travis_retry pip install tox
 script:
-    - tox
+- tox
+deploy:
+  provider: heroku
+  app: release-notifications-dev
+  api_key:
+    secure: sgCBzYbQRWLr8E/ZuAX5/6q9Tmy8WoZv/rwFRTku0UYgsqYyaWsY0Vog7bNdOzxBdylJCEwv6WhMYR8ziTtzz8Po1W7CuKlj2jJCZr/gu7KegQNIREGup6+/iPfjppNG7g5SqIRoYGYBkUT2uc7QWTVuKbxX+tovbadiM0rFfnCFT2yWiBbgnLJuWY6K/zbXx4PywY1Zqo9lC+rcE6bYCyNy56lvZ5FWxW64/4cXzjN9OPPZGYZbMknF2eEHL5GhmdPHNFnYHPZv2zRROD/uvnplOq/Hmt5L8ss98m+0n0yrDrkABGzbWMo+GAKQOSQWjGxgtiHnLg4a+AYYJqnKGDppLUq4zBR3xi1aE+28ModatyY6cLZE73rXSC/BGtwt2QdxnK2BGrKQjGlqg2zFvHDZNao31/NHUPXk0uNWMEwmMZHmNynSZHYLmyeiYsibj9pz5Mtwdje++dSX6a5cKjcMCR4eFgknyuc1heHPHts9aAZEMsuY90VBcw+YSf2aQnVA8GlyAanmMtQmao6FbDT24z0aKz6q0XDX6asacGic+zfxXRHpYm3YLF8e62NK1H/LTW9UL/ZwG96QW5ctfk8/4xwLtvNxBMYlX5ERTeLyz2R7MFmzolXRa2VIPaaWVI0NZzQYYqJdVtqM1ZRko6R6CHAlgqfnOLXEw3IDI2I=

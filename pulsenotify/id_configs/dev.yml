@@ -10,9 +10,9 @@ releasetasks:
     - log_collect
     - ses
   emails:
-    - csheehan@mozilla.com
+    - release-automation-notifications-dev@mozilla.com
   channels:
-    - "#sheehan_testchan_1"
+    - "#release-notifications"
 
 releng-important:
   emails:

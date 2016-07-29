@@ -1,4 +1,5 @@
 # Pulse-Notifier
+[![Build Status](https://travis-ci.org/cgsheeh/pulse-notify.svg?branch=master)](https://travis-ci.org/cgsheeh/pulse-notify)
 Pulse-Notifier is used to take various actions based on the completion status of Taskcluster tasks, primarily notifications for failures and other important events. The program depends on the Taskcluster and Pulse tools at Mozilla.
 
 ### Technical Features

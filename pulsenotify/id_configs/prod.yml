@@ -1,1 +1,9 @@
-blank: 'not ready'
+releasetasks:
+  plugins:
+    - irc
+    - log_collect
+    - ses
+  emails:
+    - release+release-notifications@mozilla.com
+  channels:
+    - "#release-notifications"

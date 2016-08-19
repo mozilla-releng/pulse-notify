@@ -4,6 +4,6 @@ releasetasks:
     - log_collect
     - ses
   emails:
-    - release+release-notifications@mozilla.com
+    - release-automation-notifications@mozilla.com
   channels:
     - "#release-notifications"

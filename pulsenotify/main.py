@@ -1,12 +1,11 @@
 import logging
-import sys
+import os
 from pulsenotify.consumer import NotifyConsumer
 from pulsenotify import event_loop
 from pulsenotify.worker import worker
 
 
 log = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, format='%(asctime)s [%(levelname)s] %(message)s', level=logging.NOTSET)
 
 
 def cli():
@@ -24,4 +23,10 @@ def cli():
 
 
 if __name__ == '__main__':
+    log_level = os.environ.get("LOG_LEVEL", "INFO")
+    # convert the string representation of level into internal int
+    log_level = logging._nameToLevel.get(log_level, logging.INFO)
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=log_level)
     cli()

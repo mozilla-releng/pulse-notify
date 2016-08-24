@@ -29,4 +29,5 @@ if __name__ == '__main__':
     logging.basicConfig(
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=log_level)
+    logging.getLogger("boto3").setLevel(logging.WARNING)
     cli()

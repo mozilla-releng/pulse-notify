@@ -23,7 +23,6 @@ def cli():
 
 
 if __name__ == '__main__':
-    # Get desired log level from environment, fallback to "INFO"
     log_level = os.environ.get("LOG_LEVEL", "INFO")
     # convert the string representation of level into internal int
     log_level = logging._nameToLevel.get(log_level, logging.INFO)

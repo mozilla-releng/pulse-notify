@@ -1,5 +1,4 @@
 import logging
-import sys
 import os
 from pulsenotify.consumer import NotifyConsumer
 from pulsenotify import event_loop
@@ -7,7 +6,6 @@ from pulsenotify.worker import worker
 
 
 log = logging.getLogger(__name__)
-
 
 
 def cli():

@@ -24,7 +24,6 @@ EXCHANGES = {
 
 #  Keys to bind exchanges to
 ROUTING_KEYS = {
-    'route.connor',
     'route.index.releases.v1.#',
 }
 

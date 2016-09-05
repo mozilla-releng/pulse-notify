@@ -46,6 +46,13 @@ class Plugin(AWSPlugin):
         else:
             email_message.attach(MIMEText(status_config['message'], 'text'))
 
+        #  Set headers to create email threads
+        thread_id = '<{task_group_id}@{thread_domain}>'.format(task_group_id=task_data.task_group_id,
+                                                               thread_domain=os.environ.get('EMAIL_THREADING_DOMAIN',
+                                                                                            'mozilla.com'))
+        email_message.add_header('In-Reply-To', thread_id)
+        email_message.add_header('References', thread_id)
+
         for attempt in range(5):
             try:
                 ses = boto3.client(self.name,

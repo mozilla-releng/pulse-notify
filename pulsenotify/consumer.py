@@ -183,12 +183,13 @@ class TaskData(object):
         self.envelope = envelope
         self.properties = properties
         self.id = self.body['status']['taskId']
+        self.provisioner_id = self.body['status']['provisionerId']
+        self.task_group_id = self.body['status']['taskGroupId']
         self.status = envelope.exchange_name.split('/')[-1]
         self.inspector_url = "https://tools.taskcluster.net/task-inspector/#{task_id}".format(task_id=self.id)
 
         #  These fields are created by the async function fetch_task_and_analyze
         self.definition = None
-        self.provisioner_id = None
         self.logs = None
 
     def __repr__(self):
@@ -201,7 +202,6 @@ class TaskData(object):
             full_task = await fetch_task(self.id)
             if full_task:
                 self.definition = full_task
-                self.provisioner_id = self.definition['provisionerId']
                 break
             else:
                 log.debug('%r definition fetch attempt %s failed, retrying in 10s...', self, attempt)

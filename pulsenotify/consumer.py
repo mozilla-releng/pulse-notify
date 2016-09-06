@@ -16,7 +16,7 @@ EXCHANGES = {
     # "exchange/taskcluster-queue/v1/task-defined",
     # "exchange/taskcluster-queue/v1/task-pending",
     # "exchange/taskcluster-queue/v1/task-running",
-    "exchange/taskcluster-queue/v1/artifact-created",
+    # "exchange/taskcluster-queue/v1/artifact-created",
     "exchange/taskcluster-queue/v1/task-completed",
     "exchange/taskcluster-queue/v1/task-failed",
     "exchange/taskcluster-queue/v1/task-exception",

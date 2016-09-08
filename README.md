@@ -193,6 +193,9 @@ The system is configured using a set of environment variables, detailed below:
 - PN_SERVICES
     Colon-separated list of enabled plugins.
     
+- ROUTING_KEYS
+    AMQP routing keys to bind to exchanges.
+    
 - ID_ENV
     Specifies whether to pull dev or prod id configs
 
@@ -213,6 +216,9 @@ The system is configured using a set of environment variables, detailed below:
 
 - SES_EMAIL
     Sender email for SES plugin.
+    
+- EMAIL_THREADING_DOMAIN
+    Domain for threading key in form <{thread}@{domain}>. Defaults to mozilla.com
 
 - IRC_HOST, IRC_NAME, IRC_PORT, IRC_NICK, IRC_CHAN, IRC_PASS
     IRC configuration for irc plugin.

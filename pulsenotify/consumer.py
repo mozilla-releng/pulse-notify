@@ -23,9 +23,7 @@ EXCHANGES = {
 }
 
 #  Keys to bind exchanges to
-ROUTING_KEYS = {
-    'route.index.releases.v1.#',
-}
+ROUTING_KEYS = os.environ['ROUTING_KEYS'].split(':')
 
 
 class TaskFetchFailedError(Exception):

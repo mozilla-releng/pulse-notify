@@ -263,6 +263,7 @@ class TaskData(object):
 
         return s3_key
 
+
 async def get_log(url, provisioner_id):
     #  Grabs logs for supported provisionerIds from a given url
     if provisioner_id == 'buildbot-bridge':
@@ -275,12 +276,14 @@ async def get_log(url, provisioner_id):
         log.debug('Unknown provisionerId %s given to get_log', provisioner_id)
         return None
 
+
 async def get_aws_log(url):
     #  Grabs log files for aws-provisioner tasks
     with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             log.debug('aws response header is: %s', response.headers.get('content-encoding', 'none'))
             return await response.text()
+
 
 async def get_bbb_log(url):
     #  Grabs log files for buildbot-bridge provisioner tasks

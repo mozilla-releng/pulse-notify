@@ -4,6 +4,7 @@ import os
 
 log = logging.getLogger(__name__)
 
+
 async def worker(consumer):
     try:
         transport, protocol = await aioamqp.connect(

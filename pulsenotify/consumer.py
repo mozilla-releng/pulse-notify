@@ -309,5 +309,7 @@ async def get_bbb_log(url):
                 return None
 
             except KeyError:
-                log.exception('No key \'log_url\' in json response for buildbot-bridge')
+                # Cancelled tasks may not have logs if they have never started. This happens when
+                # we have to cancel a release graph. Hence, log.exception() is too high for this case.
+                log.warn('No key \'log_url\' in json response for buildbot-bridge')
                 return None

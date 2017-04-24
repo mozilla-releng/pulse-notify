@@ -7,3 +7,9 @@ releasetasks:
     - release-automation-notifications@mozilla.com
   channels:
     - "#release-notifications"
+
+release-drivers:
+  plugins:
+    - ses
+  emails:
+    - release-drivers@mozilla.org

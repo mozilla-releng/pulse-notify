@@ -1,104 +1,19 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-	<head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>{{ subject }}</title>
-        <style type="text/css">
-			body{
-				background-color:#DEE0E2;
-				font-family:Helvetica;
-			}
-
-			h1{
-				color:#202020 !important;
-				display:block;
-				font-size:26px;
-				font-style:normal;
-				font-weight:bold;
-				line-height:100%;
-				letter-spacing:normal;
-				margin-top:0;
-				margin-right:0;
-				margin-bottom:10px;
-				margin-left:0;
-				text-align:left;
-			}
-
-			h3{
-				color:#606060 !important;
-				display:block;
-				font-size:16px;
-				font-style:italic;
-				font-weight:normal;
-				line-height:100%;
-				letter-spacing:normal;
-				margin-top:0;
-				margin-right:0;
-				margin-bottom:10px;
-				margin-left:0;
-				text-align:left;
-			}
-
-			#emailBody{
-				background-color:#F4F4F4;
-				border-top:1px solid #FFFFFF;
-				border-bottom:1px solid #CCCCCC;
-				color:#505050;
-				font-size:14px;
-				line-height:150%;
-				padding-top:20px;
-				padding-right:20px;
-				padding-bottom:20px;
-				padding-left:20px;
-				text-align:left;
-                border:1px solid #BBBBBB;
-				width:600px;
-				padding:20px;
-				border-top:4px solid #BBBBBB;
-			}
-
-			#footer{
-				background-color:#F4F4F4;
-				border-top:1px solid #FFFFFF;
-				font-size:10px;
-				line-height:150%;
-				padding-top:20px;
-				padding-right:20px;
-				padding-bottom:20px;
-				padding-left:20px;
-				text-align:left;
-			}
-		</style>
-    </head>
-    <body>
-    	<center>
-        	<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
-            	<tr>
-                    <td align="center" valign="top" id="emailBody">
-                        <h1>{{ subject }}</h1>
-                        <h3><i>{{ body }}</i></h3>
-                        <p>You can view the task at {{ inspector_url }}</p>
-                        {% if logs is not none %}
-                            Logs:
-                            <ul>
-                                {% for log in logs %}
-                                    <li>{{ log }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                        <!-- // END BODY -->
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" valign="top" id="footer">
-                        <!-- BEGIN FOOTER // -->
-                        <em>Sent from pulse-notify at {{ date }}.</em>
-                        <br />
-                        <strong>Problem? File a bug on <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Release%20Engineering&component=Release%20Automation">Bugzilla</a>.
-                        <!-- // END FOOTER -->
-                    </td>
-                </tr>
-            </table>
-        </center>
-    </body>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>{{ subject }}</title>
+  </head>
+  <body>
+    <p>{{ body }}</p>
+    <p>You can view the task at {{ inspector_url }}</p>
+    {% if logs is not none %}
+      Logs:
+        <ul>
+        {% for log in logs %}
+          <li>{{ log }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+  </body>
 </html>

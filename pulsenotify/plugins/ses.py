@@ -34,6 +34,7 @@ class Plugin(AWSPlugin):
     async def notify(self, task_data, status_config):
         email_message = MIMEMultipart()
         email_message['Subject'] = status_config['subject']
+        email_message['To'] = ', '.join(status_config['emails'])
 
         if self.template:
             log_destinations = (l['destination_url'] for l in task_data.log_data())

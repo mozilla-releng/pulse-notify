@@ -12,7 +12,7 @@ releasetasks:
   emails:
     - release-automation-notifications-dev@mozilla.com
   channels:
-    - "#release-notifications"
+    - "#release-notifications-dev"
 
 releng-important:
   emails:

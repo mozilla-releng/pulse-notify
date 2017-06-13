@@ -117,7 +117,9 @@ class NotifyConsumer(object):
             log.exception('%r has a notifications section, but no notification configurations', task_data)
 
         except StatusNotificationsNotConfiguredError:
-            log.exception('%r has no notification configuration.', task_data)
+            log.warning('No configuration defined for status "{}" in task "{}". Skipping notification...'.format(
+                task_data.status, task_data.id
+            ))
 
         except TaskFetchFailedError:
             log.exception('Could not fetch %r', task_data)

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 from . import BasePlugin
@@ -95,10 +96,19 @@ class Plugin(BasePlugin):
 
         for chan in status_config['channels']:
             try:
-                self.irc_client.trigger(NOTIFY_SIGNAL_NAME, status=task_data.status, channel=chan,
-                                        message=status_config['message'], logs=task_data.log_data(),
-                                        task_id=task_data.id)
+                self._send_message(task_data, status_config, chan)
+            except RuntimeError as e:
+                # RuntimeError can occur when client isn't connected
+                await self.irc_client.trigger('CLIENT_DISCONNECT')
+                # Slow down pulsenotify in case the IRC client is bit slow
+                await asyncio.sleep(0.1)
+                self._send_message(task_data, status_config, chan)
             except TypeError as te:
                 log.exception('TypeError: %s', te)
 
         log.info('Notified with IRC for %s', task_data)
+
+    def _send_message(self, task_data, status_config, channel):
+        self.irc_client.trigger(NOTIFY_SIGNAL_NAME, status=task_data.status, channel=channel,
+                                message=status_config['message'], logs=task_data.log_data(),
+                                task_id=task_data.id)

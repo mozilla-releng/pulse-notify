@@ -2,12 +2,41 @@ import aiohttp
 import logging
 import influxdb
 import os
-from time import time
+from asyncio import sleep
 from functools import wraps
+from time import time
 
 log = logging.getLogger(__name__)
 
 db_cnxn = influxdb.InfluxDBClient(database=os.environ.get('INFLUXDB_NAME', 'time_notifications'))
+
+
+class RetriesExceededError(Exception):
+    """ Exception raised when too many retries occured """
+    pass
+
+
+async def retry_connection(async_func, *func_params):
+    max_attempt = 5
+    current_attempt = 0
+
+    while current_attempt < max_attempt:
+        current_attempt += 1
+        try:
+            result = await async_func(*func_params)
+            if result:
+                return result
+            else:
+                raise ValueError('"{}" returned a falsey value: {}'.format(async_func.__name__, result))
+        except Exception as e:
+            if current_attempt < max_attempt:
+                log.warn('Error caught while accessing network. Retrying. Error: %s', e)
+            else:
+                log.warn('Too many retries. Chaining latest error...')
+                raise RetriesExceededError from e
+
+        log.warn('Fetch attempt %s failed, retrying in 10s...', current_attempt)
+        sleep(10)
 
 
 async def fetch_task(task_id):

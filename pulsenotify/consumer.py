@@ -3,10 +3,9 @@ import logging
 import os
 from importlib import import_module
 from yaml import safe_load
-from asyncio import sleep
 from json import JSONDecodeError
 import aiohttp
-from pulsenotify.util import fetch_task
+from pulsenotify.util import fetch_task, retry_connection, RetriesExceededError
 from pulsenotify.util import async_time_me
 
 log = logging.getLogger(__name__)
@@ -197,16 +196,10 @@ class TaskData(object):
     async def fetch_task_and_analyze(self):
         #  Fetch task, retrying a few times in case of a timeout
         #  Once the task is fetched, set as the definition and get the provisionerId
-        for attempt in range(1, 6):
-            full_task = await fetch_task(self.id)
-            if full_task:
-                self.definition = full_task
-                break
-            else:
-                log.debug('%r definition fetch attempt %s failed, retrying in 10s...', self, attempt)
-                sleep(10)
-        else:
-            raise TaskFetchFailedError()
+        try:
+            self.definition = await retry_connection(fetch_task, self.id)
+        except RetriesExceededError as e:
+            raise TaskFetchFailedError from e
 
         #  No need to create the logs if the provisionerId is not supported
         if self.provisioner_id not in self.LOG_TEMPLATES:
@@ -217,15 +210,10 @@ class TaskData(object):
         for run in self.body['status']['runs']:
             url = self.LOG_TEMPLATES[self.provisioner_id].format(task_id=self.id, run_id=run['runId'])
             #  Retry log grab in case of network instability
-            for attempt in range(1, 6):
-                task_log = await get_log(url, self.provisioner_id)
-                if task_log:
-                    self.logs.append((run['runId'], task_log,))
-                    break
-                else:
-                    log.debug('Attempt %s in getting %r run %s log failed, retrying in 10s...', attempt, self, run)
-                    sleep(10)
-            else:
+            try:
+                task_log = await retry_connection(get_log, url, self.provisioner_id)
+                self.logs.append((run['runId'], task_log,))
+            except RetriesExceededError:
                 log.warn('Could not retrieve log for %r run %s.', self, run)
                 continue
 

@@ -16,6 +16,6 @@ def event_loop():
 @pytest.fixture()
 def task_ids():
     return {
-        'REAL_TASK': 'dacr5qmDQlqVl-BI_BdnBw',
+        'REAL_TASK': '0OnFim7VQ3K4lCl0scQxuw',
         'FAKE_TASK': 'connorsheehanlolololol',
     }

@@ -10,7 +10,7 @@ class TestFetchTask:
         resp = await fetch_task(task_ids['REAL_TASK'])
 
         assert type(resp) is dict
-        assert resp['taskGroupId'] == "BZLGDtMDRjK4YigfYqTR7Q"
+        assert resp['taskGroupId'] == "3NLV9LrRSiyaS-zop5EdAw"
 
     @pytest.mark.asyncio
     async def test_fake_task(self, task_ids):

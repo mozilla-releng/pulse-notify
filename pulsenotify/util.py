@@ -1,8 +1,8 @@
 import aiohttp
+import asyncio
 import logging
 import influxdb
 import os
-from asyncio import sleep
 from functools import wraps
 from time import time
 
@@ -16,7 +16,7 @@ class RetriesExceededError(Exception):
     pass
 
 
-async def retry_connection(async_func, *func_params):
+async def retry_connection(async_func, *func_params, sleep_interval_in_s=10):
     max_attempt = 5
     current_attempt = 0
 
@@ -36,7 +36,7 @@ async def retry_connection(async_func, *func_params):
                 raise RetriesExceededError from e
 
         log.warn('Fetch attempt %s failed, retrying in 10s...', current_attempt)
-        sleep(10)
+        await asyncio.sleep(sleep_interval_in_s)
 
 
 async def fetch_task(task_id):

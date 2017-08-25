@@ -35,7 +35,7 @@ async def test_retry_connection_chains_value_error_when_fetched_value_is_falsey(
         return None
 
     with pytest.raises(RetriesExceededError) as e:
-        await retry_connection(always_empty_function)
+        await retry_connection(always_empty_function, sleep_interval_in_s=0.1)
 
     assert _extract_chained_exception_message(e) == \
         'ValueError: "always_empty_function" returned a falsey value: None'
@@ -47,7 +47,7 @@ async def test_retry_connection_chains_latest_failure():
         raise _CustomException("I won't pass")
 
     with pytest.raises(RetriesExceededError) as e:
-        await retry_connection(error_function)
+        await retry_connection(error_function, sleep_interval_in_s=0.1)
 
     assert _extract_chained_exception_message(e) == \
         "test_utils._CustomException: I won't pass"

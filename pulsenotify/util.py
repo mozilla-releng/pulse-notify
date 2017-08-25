@@ -30,9 +30,9 @@ async def retry_connection(async_func, *func_params, sleep_interval_in_s=10):
                 raise ValueError('"{}" returned a falsey value: {}'.format(async_func.__name__, result))
         except Exception as e:
             if current_attempt < max_attempt:
-                log.warn('Error caught while accessing network. Retrying. Error: %s', e)
+                log.warn('Cannot access network. Retrying. Reason: %s', e)
             else:
-                log.warn('Too many retries. Chaining latest error...')
+                log.warn('Too many retries. Chaining latest issue...')
                 raise RetriesExceededError from e
 
         log.warn('Fetch attempt %s failed, retrying in 10s...', current_attempt)

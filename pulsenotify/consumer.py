@@ -30,6 +30,11 @@ class TaskFetchFailedError(Exception):
     pass
 
 
+class NoLogsExistError(Exception):
+    """ Exception thrown when no log exist for the given task """
+    pass
+
+
 class NoNotificationConfigurationError(Exception):
     """ Exception thrown when no notifications are configured """
     pass
@@ -123,6 +128,11 @@ class NotifyConsumer(object):
         except TaskFetchFailedError:
             log.exception('Could not fetch %r', task_data)
 
+        except NoLogsExistError as e:
+            # Cancelled tasks may not have logs if they have never started. This happens when
+            # we have to cancel a release graph. Hence, log.exception() is too high for this case.
+            log.warn('Could not fetch logs for %r. Reason: %s', task_data, e)
+
         except Exception as e:
             log.exception('Exception %s caught by generic exception trap', e)
 
@@ -211,7 +221,10 @@ class TaskData(object):
             url = self.LOG_TEMPLATES[self.provisioner_id].format(task_id=self.id, run_id=run['runId'])
             #  Retry log grab in case of network instability
             try:
-                task_log = await retry_connection(get_log, url, self.provisioner_id)
+                # NoLogsExistError is raised only when we're sure the logs won't ever exist
+                task_log = await retry_connection(
+                    get_log, url, self.provisioner_id, by_pass_exceptions=(NoLogsExistError,)
+                )
                 self.logs.append((run['runId'], task_log,))
             except RetriesExceededError:
                 log.warn('Could not retrieve log for %r run %s.', self, run)
@@ -301,8 +314,7 @@ async def get_bbb_log(url):
                 log.exception('JSONDecodeError thrown when converting buildbot-bridge properties to json.')
                 return None
 
-            except KeyError:
-                # Cancelled tasks may not have logs if they have never started. This happens when
-                # we have to cancel a release graph. Hence, log.exception() is too high for this case.
-                log.warn('No key \'log_url\' in json response for buildbot-bridge')
-                return None
+            except KeyError as e:
+                raise NoLogsExistError(
+                    "Missing key 'log_url' in json response for buildbot-bridge. URL used: {}".format(url)
+                )

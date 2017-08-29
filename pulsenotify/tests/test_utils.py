@@ -53,6 +53,15 @@ async def test_retry_connection_chains_latest_failure():
         "test_utils._CustomException: I won't pass"
 
 
+@pytest.mark.asyncio
+async def test_retry_connection_allows_retries_to_be_by_passed():
+    async def error_function():
+        raise _CustomException("I won't pass")
+
+    with pytest.raises(_CustomException):
+        await retry_connection(error_function, sleep_interval_in_s=0.1, by_pass_exceptions=(_CustomException,))
+
+
 class TestFetchTask:
 
     @pytest.mark.asyncio

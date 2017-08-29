@@ -16,7 +16,7 @@ class RetriesExceededError(Exception):
     pass
 
 
-async def retry_connection(async_func, *func_params, sleep_interval_in_s=10):
+async def retry_connection(async_func, *func_params, sleep_interval_in_s=10, by_pass_exceptions=()):
     max_attempt = 5
     current_attempt = 0
 
@@ -28,6 +28,9 @@ async def retry_connection(async_func, *func_params, sleep_interval_in_s=10):
                 return result
             else:
                 raise ValueError('"{}" returned a falsey value: {}'.format(async_func.__name__, result))
+        except by_pass_exceptions as e:
+            log.debug('By pass exception "%s" met. Stopping retry mechanism.')
+            raise e
         except Exception as e:
             if current_attempt < max_attempt:
                 log.warn('Cannot access network. Retrying. Reason: %s', e)

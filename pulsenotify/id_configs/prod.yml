@@ -9,4 +9,5 @@ release-drivers:
   plugins:
     - ses
   emails:
-    - release-drivers@mozilla.org
+    # release-drivers@m.o is not used anymore for automation emails (bug 1407265)
+    - release-signoff@mozilla.org

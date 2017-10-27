@@ -11,3 +11,9 @@ release-drivers:
   emails:
     # release-drivers@m.o is not used anymore for automation emails (bug 1407265)
     - release-signoff@mozilla.org
+
+release-drivers-staging:
+  plugins:
+    - ses
+  emails:
+    - release+tcstaging@mozilla.com

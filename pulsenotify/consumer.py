@@ -241,7 +241,7 @@ class TaskData(object):
                     's3_key': self.make_s3_key(run_number, build_properties),
                     'destination_url': self.S3_DESTINATION.format(bucket=os.environ['S3_BUCKET'],
                                                                   log_key=self.make_s3_key(run_number)),
-            }
+                }
 
     def make_s3_key(self, run_id, build_properties):
         task_metadata = self.definition['metadata']

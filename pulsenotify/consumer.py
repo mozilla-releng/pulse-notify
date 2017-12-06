@@ -234,7 +234,7 @@ class TaskData(object):
         build_properties = self.definition.get('extra', {}).get('build_props')
         if not build_properties:
             build_properties = self.definition.get('payload', {}).get('properties')
-        if build_properties and self.logs:
+        if build_properties and self.logs and ('branch' in build_properties or 'repo_path' in build_properties):
             for run_number, data in self.logs:
                 yield {
                     'data': data,
@@ -255,7 +255,11 @@ class TaskData(object):
 
         name = task_metadata['name'].replace('/', '_').replace('\\', '_')
 
-        s3_key = self.S3_KEY_TEMPLATE.format(branch=build_properties['branch'],
+        branch = build_properties.get('branch')
+        if not branch:
+            branch = build_properties['repo_path'][len("releases/"):]
+
+        s3_key = self.S3_KEY_TEMPLATE.format(branch=branch,
                                              product=build_properties['product'],
                                              version=build_properties['version'],
                                              build_number=build_properties['build_number'],
